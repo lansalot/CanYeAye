@@ -9,5 +9,9 @@ public interface IFileDialogService
 
     Task<string?> PickOpenDbcAsync();
 
+    Task<string?> PickOpenScriptAsync();
+
+    Task<string?> PickSaveScriptAsync(string suggestedName);
+
     Task ShowMessageAsync(string title, string message);
 }

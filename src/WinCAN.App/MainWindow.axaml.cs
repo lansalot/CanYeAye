@@ -33,4 +33,15 @@ public partial class MainWindow : Window
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e) => Close();
+
+    private void OnScriptingClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel.FileDialogs is null)
+        {
+            return;
+        }
+
+        var viewModel = new ScriptingWindowViewModel(_viewModel.ConnectionManager, _viewModel.FileDialogs);
+        new Views.ScriptingWindow(viewModel).Show(this);
+    }
 }

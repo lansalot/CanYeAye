@@ -23,6 +23,11 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
         Patterns = ["*.dbc", "*.DBC"],
     };
 
+    private static readonly FilePickerFileType ScriptFiles = new("JavaScript files")
+    {
+        Patterns = ["*.js", "*.JS"],
+    };
+
     private static readonly FilePickerFileType AllFiles = new("All files") { Patterns = ["*"] };
 
     public async Task<string?> PickOpenLogAsync()
@@ -84,6 +89,43 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
         });
 
         return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
+
+    public async Task<string?> PickOpenScriptAsync()
+    {
+        var storage = topLevel()?.StorageProvider;
+        if (storage is null)
+        {
+            return null;
+        }
+
+        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open script",
+            AllowMultiple = false,
+            FileTypeFilter = [ScriptFiles, AllFiles],
+        });
+
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
+
+    public async Task<string?> PickSaveScriptAsync(string suggestedName)
+    {
+        var storage = topLevel()?.StorageProvider;
+        if (storage is null)
+        {
+            return null;
+        }
+
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save script",
+            SuggestedFileName = suggestedName,
+            DefaultExtension = "js",
+            FileTypeChoices = [ScriptFiles, AllFiles],
+        });
+
+        return file?.TryGetLocalPath();
     }
 
     public async Task ShowMessageAsync(string title, string message)

@@ -192,6 +192,16 @@ public sealed class ScriptHost
         TickIntervalChanged?.Invoke(this, TickInterval);
     }
 
+    /// <summary>Stops the tick and clears filters (used when a script is deleted).</summary>
+    public void Stop()
+    {
+        SetTickInterval(0);
+        _filters.Clear();
+        _isoTpHandler.ClearFilters();
+        _udsHandler.ClearFilters();
+        IsCompiled = false;
+    }
+
     private JsValue? FindCallable(string name)
     {
         try

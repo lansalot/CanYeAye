@@ -41,6 +41,7 @@
         <Separator Width="1" />
         <Button Content="Clear" Command="{Binding ClearFramesCommand}" />
         <Button Content="Graph" Command="{Binding GraphCommand}" />
+        <Button Content="Scripting" Click="OnScriptingClick" />
         <CheckBox Content="Suspend" IsChecked="{Binding CaptureSuspended}" />
         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Margin="16,0,0,0" />
       </StackPanel>
