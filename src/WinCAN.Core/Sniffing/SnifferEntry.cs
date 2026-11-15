@@ -89,6 +89,25 @@ public sealed class SnifferEntry
         return _arrivals.Count * 1000.0 / window;
     }
 
+    /// <summary>
+    /// True once a full second of history exists and the observed rate is below
+    /// <paramref name="minimumHz"/> (0 disables the check).
+    /// </summary>
+    public bool IsRateBelow(double minimumHz, long nowMs)
+    {
+        if (minimumHz <= 0)
+        {
+            return false;
+        }
+
+        if (nowMs - FirstSeenMs < RateWindowMs)
+        {
+            return false;
+        }
+
+        return RateHz(nowMs) < minimumHz;
+    }
+
     /// <summary>Data byte value, or -1 when the index is past the current payload.</summary>
     public int Data(int index) => index >= 0 && index < Length ? _current[index] : -1;
 

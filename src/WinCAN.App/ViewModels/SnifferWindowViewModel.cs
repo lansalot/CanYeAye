@@ -42,6 +42,7 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
     private readonly CanConnectionManager _manager;
     private readonly Dictionary<uint, SnifferEntry> _entries = [];
     private readonly Dictionary<uint, SnifferFilterItem> _filters = [];
+    private readonly HashSet<uint> _suppressed = [];
     private readonly DispatcherTimer _refreshTimer;
     private readonly DispatcherTimer _notchTimer;
 
@@ -109,6 +110,7 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
         Filters.Clear();
         _entries.Clear();
         _filters.Clear();
+        _suppressed.Clear();
     }
 
     partial void OnNotchIntervalMsChanged(decimal value)
@@ -188,7 +190,7 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
 
     private void InsertRow(SnifferEntry entry)
     {
-        if (Rows.Contains(entry))
+        if (_suppressed.Contains(entry.Id) || Rows.Contains(entry))
         {
             return;
         }
@@ -239,7 +241,9 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
         Rows.Clear();
         foreach (var entry in _entries.Values.OrderBy(e => e.Id))
         {
-            if (_filters.TryGetValue(entry.Id, out var filter) && filter.IsChecked)
+            if (_filters.TryGetValue(entry.Id, out var filter) &&
+                filter.IsChecked &&
+                !_suppressed.Contains(entry.Id))
             {
                 Rows.Add(entry);
             }
@@ -258,20 +262,25 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
         List<SnifferEntry>? expired = null;
         foreach (var entry in _entries.Values)
         {
-            var age = entry.ElapsedMs(now);
-            if (!NeverExpireIds && age > expireMs)
+            if (!NeverExpireIds && entry.ElapsedMs(now) > expireMs)
             {
                 (expired ??= []).Add(entry);
                 continue;
             }
 
-            // Only judge the rate once a full second of history exists, so a newly seen
-            // slow ID is not dropped before its rate can be measured.
-            if (minimumRate > 0 &&
-                now - entry.FirstSeenMs >= 1000 &&
-                entry.RateHz(now) < minimumRate)
+            // Below the minimum rate an ID is hidden, not removed: it keeps being
+            // tracked so it can come back if its rate recovers. (Removing it would
+            // only hide it until the next frame re-creates the row.)
+            if (minimumRate > 0 && entry.IsRateBelow(minimumRate, now))
             {
-                (expired ??= []).Add(entry);
+                if (_suppressed.Add(entry.Id))
+                {
+                    Rows.Remove(entry);
+                }
+            }
+            else if (_suppressed.Remove(entry.Id))
+            {
+                InsertRow(entry);
             }
         }
 
@@ -290,6 +299,7 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
     {
         Rows.Remove(entry);
         _entries.Remove(entry.Id);
+        _suppressed.Remove(entry.Id);
         if (_filters.Remove(entry.Id, out var filter))
         {
             Filters.Remove(filter);

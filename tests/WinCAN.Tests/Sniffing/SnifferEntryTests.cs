@@ -93,6 +93,26 @@ public class SnifferEntryTests
     }
 
     [Fact]
+    public void MinimumRateHidesAnIdThatIsTooSlow()
+    {
+        var entry = new SnifferEntry(Frame(0x600, 0, 1), nowMs: 0, sequence: 0);
+        for (var i = 1; i <= 49; i++)
+        {
+            entry.Update(Frame(0x600, i * 20_000, 1), nowMs: i * 20, sequence: (uint)i, muteNotched: false);
+        }
+
+        // ~50 Hz over the first second: above 10 Hz, below 1000 Hz.
+        Assert.False(entry.IsRateBelow(10, 1000));
+        Assert.True(entry.IsRateBelow(1000, 1000));
+
+        // Under a second of history the rate is never judged.
+        Assert.False(entry.IsRateBelow(1000, 500));
+
+        // A disabled filter never hides anything.
+        Assert.False(entry.IsRateBelow(0, 5000));
+    }
+
+    [Fact]
     public void FadeGrowsAsBytesStayUnchanged()
     {
         var entry = new SnifferEntry(Frame(0x500, 0, 0xAA), nowMs: 0, sequence: 0);
