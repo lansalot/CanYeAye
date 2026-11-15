@@ -100,6 +100,12 @@ dotnet test --filter FullyQualifiedName~FileFormats
   `CanLogServerProtocol`, `MqttFrameCodec`), and transport implementations over serial/TCP/UDP
   (`GvretConnection`, `LawicelConnection`, `SocketCanDConnection`, `CanServerConnection`,
   `CanLogServerConnection`, `MqttConnection`).
+- `WinCAN.Core.Dbc`: model (`DbcFile`, `DbcMessage`, `DbcSignal`, nodes/attributes/value
+  tables), `SignalCodec` (sawtooth extract/insert + float/string decode), `DbcFileReader`
+  (SavvyCAN grammar with fault list), `DbcFileWriter` (byte-stable save incl. CAN FD
+  `VFrameFormat`/`CANFD_BRS` sync) and `DbcDatabase` (multi-file lookup, J1939/GMLAN).
+  Validated against SavvyCAN's `examples/*.dbc` and the 17 real files in `DBCsamples`
+  (copied to `tests/WinCAN.Tests/Fixtures/DbcSamples`).
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 
