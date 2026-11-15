@@ -1,17 +1,32 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using WinCAN.Core;
 using WinCAN.Core.Formatting;
 
 namespace WinCAN.App.ViewModels;
 
-/// <summary>Formatted row for the frame grid. Keeps the underlying frame for editing/export.</summary>
-public sealed class FrameRowViewModel
+/// <summary>
+/// Formatted row for the frame grid. Keeps the underlying frame for editing/export.
+/// Mutable so overwrite mode can update a row in place without losing selection.
+/// </summary>
+public partial class FrameRowViewModel : ObservableObject
 {
+    private CanFrame _frame;
+
     public FrameRowViewModel(CanFrame frame)
     {
-        Frame = frame;
+        _frame = frame;
     }
 
-    public CanFrame Frame { get; }
+    public CanFrame Frame => _frame;
+
+    public void SetFrame(CanFrame frame)
+    {
+        _frame = frame;
+        OnPropertyChanged(string.Empty); // every displayed property changed
+    }
+
+    [ObservableProperty]
+    private string _interpretation = string.Empty;
 
     public string Time => Frame.Timestamp.ToString();
 
@@ -35,6 +50,14 @@ public sealed class FrameRowViewModel
     public string Data => HexFormat.SpaceDelimited(Frame.Payload);
 
     public bool Extended => Frame.IsExtended;
+
+    /// <summary>Frame count for overwrite mode (empty in normal mode).</summary>
+    public string Count => Frame.FrameCount > 0 ? Frame.FrameCount.ToString() : string.Empty;
+
+    /// <summary>Time since the previous frame of this ID in overwrite mode.</summary>
+    public string Delta => Frame.TimeDelta > 0
+        ? (Frame.TimeDelta / 1_000_000.0).ToString("0.000000", System.Globalization.CultureInfo.InvariantCulture)
+        : string.Empty;
 
     public string Flags
     {
@@ -69,4 +92,3 @@ public sealed class FrameRowViewModel
         $"{Frame.Timestamp}  {Type}  {Id}  [{Length}]  {Data}  bus {Bus}" +
         (string.IsNullOrEmpty(Flags) ? string.Empty : $"  {Flags}");
 }
-

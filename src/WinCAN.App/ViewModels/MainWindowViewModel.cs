@@ -15,11 +15,9 @@ using WinCAN.Core.Logging;
 
 namespace WinCAN.App.ViewModels;
 
-public sealed record SignalRowViewModel(string Name, string Value, string Unit, string Description);
-
 /// <summary>
-/// Main window state: connection lifecycle, capture store, log pane, DBC decoding and frame
-/// transmission. Frames arrive on transport threads and are batched onto the UI thread.
+/// Main window state: connection lifecycle, capture store, frame filtering/overwrite/interpret
+/// (the right-hand frame panel), log pane, DBC decoding and frame transmission.
 /// </summary>
 public partial class MainWindowViewModel : ObservableObject
 {
@@ -28,8 +26,16 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly FrameStore _store = new();
     private readonly ConcurrentQueue<CanFrame> _pending = new();
     private readonly DispatcherTimer _flushTimer;
+    private readonly DispatcherTimer _statsTimer;
+    private readonly Dictionary<uint, bool> _idFilters = [];
+    private readonly Dictionary<byte, bool> _busFilters = [];
+    private readonly List<FrameFilterItem> _allFrameFilters = [];
+    private readonly List<BusFilterItem> _allBusFilters = [];
+    private readonly Dictionary<(byte Bus, uint Id), FrameRowViewModel> _overwriteRows = [];
     private ICanConnection? _connection;
     private string? _selectedLogPath;
+    private long _framesThisSecond;
+    private bool _suppressFilterRebuild;
 
     public MainWindowViewModel()
     {
@@ -42,6 +48,7 @@ public partial class MainWindowViewModel : ObservableObject
 
             _store.Add(frame);
             _pending.Enqueue(frame);
+            Interlocked.Increment(ref _framesThisSecond);
         };
 
         ConnectionManager.ConnectionsChanged += (_, _) =>
@@ -53,6 +60,14 @@ public partial class MainWindowViewModel : ObservableObject
         _flushTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
         _flushTimer.Tick += (_, _) => FlushPendingFrames();
         _flushTimer.Start();
+
+        _statsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _statsTimer.Tick += (_, _) =>
+        {
+            FramesPerSecond = Interlocked.Exchange(ref _framesThisSecond, 0);
+            TotalFramesCaptured = _store.Count;
+        };
+        _statsTimer.Start();
 
         AddLogLine("WinCAN ready.");
     }
@@ -67,11 +82,17 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<FrameRowViewModel> Frames { get; } = [];
 
-    public ObservableCollection<SignalRowViewModel> Signals { get; } = [];
+    public ObservableCollection<FrameFilterItem> FrameFilters { get; } = [];
+
+    public ObservableCollection<BusFilterItem> BusFilters { get; } = [];
 
     public ObservableCollection<string> LogLines { get; } = [];
 
-    public ObservableCollection<string> DbcFiles { get; } = [];
+    /// <summary>Raised when the view should scroll to the newest frame (auto-scroll).</summary>
+    public event EventHandler? ScrollToEndRequested;
+
+    /// <summary>Raised by Expand/Collapse All to change grid row sizing.</summary>
+    public event EventHandler<bool>? RowExpansionChanged;
 
     public IReadOnlyList<string> ConnectionTypes { get; } =
     [
@@ -104,6 +125,42 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private FrameRowViewModel? _selectedFrame;
+
+    [ObservableProperty]
+    private long _totalFramesCaptured;
+
+    [ObservableProperty]
+    private long _framesPerSecond;
+
+    [ObservableProperty]
+    private bool _keepFiltersWhenClearing;
+
+    [ObservableProperty]
+    private bool _autoScrollWindow = true;
+
+    [ObservableProperty]
+    private bool _overwriteMode;
+
+    [ObservableProperty]
+    private bool _interpretFrames;
+
+    [ObservableProperty]
+    private string _filterSearch = string.Empty;
+
+    [ObservableProperty]
+    private bool _showLog;
+
+    [ObservableProperty]
+    private bool _isLoading;
+
+    [ObservableProperty]
+    private bool _isLoadIndeterminate;
+
+    [ObservableProperty]
+    private double _loadProgress;
+
+    [ObservableProperty]
+    private string _loadStatus = string.Empty;
 
     [ObservableProperty]
     private string _serialPort = "COM3";
@@ -141,19 +198,9 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _sendFd;
 
-    [ObservableProperty]
-    private bool _showSidePanel = true;
-
-    [ObservableProperty]
-    private bool _showLog;
-
-    [RelayCommand]
-    private void ToggleSidePanel() => ShowSidePanel = !ShowSidePanel;
-
-    [RelayCommand]
-    private void ToggleLog() => ShowLog = !ShowLog;
-
     public bool IsConnected => _connection is not null;
+
+    public string CaptureButtonText => CaptureSuspended ? "Restart Capturing" : "Suspend Capturing";
 
     public string BusSummary
     {
@@ -171,14 +218,59 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public string FrameCountText => $"{Frames.Count} frames";
+    partial void OnCaptureSuspendedChanged(bool value) => OnPropertyChanged(nameof(CaptureButtonText));
 
-    partial void OnSelectedFrameChanged(FrameRowViewModel? value) => UpdateSignals(value);
+    partial void OnOverwriteModeChanged(bool value) => RebuildDisplay();
+
+    partial void OnInterpretFramesChanged(bool value) => RebuildDisplay();
+
+    partial void OnFilterSearchChanged(string value)
+    {
+        ApplySearchToFilterList();
+        RebuildDisplay();
+    }
+
+    [RelayCommand]
+    private void ToggleCapture() => CaptureSuspended = !CaptureSuspended;
+
+    [RelayCommand]
+    private void ToggleLog() => ShowLog = !ShowLog;
+
+    [RelayCommand]
+    private void NormalizeTiming()
+    {
+        var frames = _store.Snapshot();
+        if (frames.Count == 0)
+        {
+            return;
+        }
+
+        var minimum = frames.Min(f => f.Timestamp.ToMicroseconds());
+        foreach (var frame in frames)
+        {
+            frame.Timestamp = FrameTimestamp.FromMicroseconds(frame.Timestamp.ToMicroseconds() - minimum);
+        }
+
+        RebuildDisplay();
+        StatusText = "Frame timing normalized";
+    }
+
+    [RelayCommand]
+    private void FilterAll() => SetAllFilters(true);
+
+    [RelayCommand]
+    private void FilterNone() => SetAllFilters(false);
+
+    [RelayCommand]
+    private void ExpandAll() => RowExpansionChanged?.Invoke(this, true);
+
+    [RelayCommand]
+    private void CollapseAll() => RowExpansionChanged?.Invoke(this, false);
 
     [RelayCommand]
     private async Task OpenLogAsync()
     {
-        if (FileDialogs is null)
+        if (FileDialogs is null || IsLoading)
         {
             return;
         }
@@ -189,7 +281,22 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        StatusText = $"Loading {Path.GetFileName(path)}...";
+        await LoadLogFileAsync(path);
+    }
+
+    /// <summary>Loads a log file (also used for a path passed on the command line).</summary>
+    public async Task LoadLogFileAsync(string path)
+    {
+        if (IsLoading || !File.Exists(path))
+        {
+            return;
+        }
+
+        IsLoading = true;
+        IsLoadIndeterminate = true;
+        LoadProgress = 0;
+        LoadStatus = $"Reading {Path.GetFileName(path)}...";
+        StatusText = LoadStatus;
         try
         {
             var loaded = await Task.Run(() =>
@@ -201,31 +308,36 @@ public partial class MainWindowViewModel : ObservableObject
 
             if (!loaded.ok)
             {
-                await FileDialogs.ShowMessageAsync("Load failed", "Could not autodetect the log format.");
+                await ShowMessageAsync("Load failed", "Could not autodetect the log format.");
                 StatusText = "Load failed";
                 return;
             }
 
             _store.Clear();
+            _pending.Clear();
             Frames.Clear();
+            _overwriteRows.Clear();
             _store.AddRange(loaded.frames);
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                foreach (var frame in loaded.frames)
-                {
-                    AppendFrame(frame);
-                }
-            });
+
+            await PopulateLoadedAsync(loaded.frames);
 
             _selectedLogPath = path;
-            StatusText = $"Loaded {loaded.frames.Count} frames from {Path.GetFileName(path)}";
+            TotalFramesCaptured = _store.Count;
+            StatusText = loaded.frames.Count > MaxDisplayedFrames
+                ? $"Loaded {loaded.frames.Count:N0} frames from {Path.GetFileName(path)} (showing the last {MaxDisplayedFrames:N0})"
+                : $"Loaded {loaded.frames.Count:N0} frames from {Path.GetFileName(path)}";
             LogBus.Info(StatusText);
         }
         catch (Exception ex)
         {
             StatusText = "Load failed";
             LogBus.Error(ex.Message);
-            await FileDialogs.ShowMessageAsync("Load failed", ex.Message);
+            await ShowMessageAsync("Load failed", ex.Message);
+        }
+        finally
+        {
+            IsLoading = false;
+            IsLoadIndeterminate = false;
         }
     }
 
@@ -264,35 +376,6 @@ public partial class MainWindowViewModel : ObservableObject
         {
             LogBus.Error(ex.Message);
             await FileDialogs.ShowMessageAsync("Save failed", ex.Message);
-        }
-    }
-
-    [RelayCommand]
-    private async Task LoadDbcAsync()
-    {
-        if (FileDialogs is null)
-        {
-            return;
-        }
-
-        var path = await FileDialogs.PickOpenDbcAsync();
-        if (string.IsNullOrEmpty(path))
-        {
-            return;
-        }
-
-        try
-        {
-            var file = Dbc.Load(path);
-            DbcFiles.Add(file.FileName);
-            StatusText = $"Loaded DBC {file.FileName} ({file.Messages.Count} messages)";
-            LogBus.Info(StatusText);
-            UpdateSignals(SelectedFrame);
-        }
-        catch (Exception ex)
-        {
-            LogBus.Error(ex.Message);
-            await FileDialogs.ShowMessageAsync("DBC load failed", ex.Message);
         }
     }
 
@@ -357,10 +440,24 @@ public partial class MainWindowViewModel : ObservableObject
     private void ClearFrames()
     {
         _store.Clear();
+        _pending.Clear();
         Frames.Clear();
-        Signals.Clear();
+        _overwriteRows.Clear();
+        TotalFramesCaptured = 0;
+        FramesPerSecond = 0;
+        Interlocked.Exchange(ref _framesThisSecond, 0);
+
+        if (!KeepFiltersWhenClearing)
+        {
+            _idFilters.Clear();
+            _busFilters.Clear();
+            _allFrameFilters.Clear();
+            _allBusFilters.Clear();
+            FrameFilters.Clear();
+            BusFilters.Clear();
+        }
+
         StatusText = "Frames cleared";
-        OnPropertyChanged(nameof(FrameCountText));
     }
 
     [RelayCommand]
@@ -456,6 +553,62 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    /// <summary>Recomputes interpretations after the DBC list changes.</summary>
+    public void OnDbcChanged() => RebuildDisplay();
+
+    private async Task PopulateLoadedAsync(IReadOnlyList<CanFrame> frames)
+    {
+        Frames.Clear();
+        _overwriteRows.Clear();
+        IsLoadIndeterminate = false;
+        LoadProgress = 0;
+        LoadStatus = $"Preparing {frames.Count:N0} frames...";
+
+        if (OverwriteMode)
+        {
+            BuildOverwriteRows(frames);
+            LoadProgress = 100;
+            await Task.Yield();
+            return;
+        }
+
+        var matching = new List<CanFrame>(Math.Min(frames.Count, MaxDisplayedFrames));
+        var lastReport = 0;
+        for (var i = 0; i < frames.Count; i++)
+        {
+            var frame = frames[i];
+            RegisterFilterEntries(frame);
+            if (PassesFilters(frame))
+            {
+                matching.Add(frame);
+            }
+
+            if (i - lastReport >= 2000 || i == frames.Count - 1)
+            {
+                lastReport = i;
+                var fraction = frames.Count == 0 ? 1.0 : (i + 1) / (double)frames.Count;
+                LoadProgress = fraction * 50.0;
+                LoadStatus = $"Scanning frames {i + 1:N0} / {frames.Count:N0}";
+                await Task.Yield();
+            }
+        }
+
+        var start = Math.Max(0, matching.Count - MaxDisplayedFrames);
+        var toAdd = matching.Count - start;
+        for (var i = start; i < matching.Count; i++)
+        {
+            Frames.Add(CreateRow(matching[i]));
+            if ((i - start) % 5000 == 0 || i == matching.Count - 1)
+            {
+                LoadProgress = 50.0 + (toAdd == 0 ? 50.0 : (i - start + 1) * 50.0 / toAdd);
+                LoadStatus = $"Adding frames {i - start + 1:N0} / {toAdd:N0}";
+                await Task.Yield();
+            }
+        }
+
+        LoadProgress = 100;
+    }
+
     private ICanConnection CreateConnection()
     {
         return SelectedConnectionType switch
@@ -516,47 +669,251 @@ public partial class MainWindowViewModel : ObservableObject
         var added = false;
         while (_pending.TryDequeue(out var frame))
         {
-            AppendFrame(frame);
+            RegisterFilterEntries(frame);
+            if (!PassesFilters(frame))
+            {
+                continue;
+            }
+
+            if (OverwriteMode)
+            {
+                UpdateOverwriteRow(frame);
+            }
+            else
+            {
+                Frames.Add(CreateRow(frame));
+                if (Frames.Count > MaxDisplayedFrames)
+                {
+                    Frames.RemoveAt(0);
+                }
+            }
+
             added = true;
         }
 
         if (added)
         {
-            OnPropertyChanged(nameof(FrameCountText));
+            TotalFramesCaptured = _store.Count;
+            if (AutoScrollWindow)
+            {
+                ScrollToEndRequested?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 
-    private void AppendFrame(CanFrame frame)
+    private void RebuildDisplay()
     {
-        Frames.Add(new FrameRowViewModel(frame));
-        if (Frames.Count > MaxDisplayedFrames)
+        var snapshot = _store.Snapshot();
+        Frames.Clear();
+        _overwriteRows.Clear();
+
+        if (OverwriteMode)
         {
-            Frames.RemoveAt(0);
+            BuildOverwriteRows(snapshot);
+        }
+        else
+        {
+            var matching = new List<CanFrame>();
+            foreach (var frame in snapshot)
+            {
+                RegisterFilterEntries(frame);
+                if (PassesFilters(frame))
+                {
+                    matching.Add(frame);
+                }
+            }
+
+            var start = Math.Max(0, matching.Count - MaxDisplayedFrames);
+            for (var i = start; i < matching.Count; i++)
+            {
+                Frames.Add(CreateRow(matching[i]));
+            }
+        }
+
+        TotalFramesCaptured = _store.Count;
+    }
+
+    private void BuildOverwriteRows(IReadOnlyList<CanFrame> frames)
+    {
+        var order = new List<(byte Bus, uint Id)>();
+        var latest = new Dictionary<(byte Bus, uint Id), CanFrame>();
+        var counts = new Dictionary<(byte Bus, uint Id), uint>();
+        var deltas = new Dictionary<(byte Bus, uint Id), ulong>();
+
+        foreach (var frame in frames)
+        {
+            RegisterFilterEntries(frame);
+            if (!PassesFilters(frame))
+            {
+                continue;
+            }
+
+            var key = (frame.Bus, frame.FrameId);
+            if (latest.TryGetValue(key, out var previous))
+            {
+                counts[key] = counts.TryGetValue(key, out var count) ? count + 1 : 2;
+                deltas[key] = (ulong)Math.Max(0, frame.Timestamp.ToMicroseconds() - previous.Timestamp.ToMicroseconds());
+                latest[key] = frame;
+            }
+            else
+            {
+                order.Add(key);
+                latest[key] = frame;
+                counts[key] = 1;
+                deltas[key] = 0;
+            }
+        }
+
+        foreach (var key in order)
+        {
+            var display = latest[key].Clone();
+            display.FrameCount = counts[key];
+            display.TimeDelta = deltas[key];
+            var row = CreateRow(display);
+            Frames.Add(row);
+            _overwriteRows[key] = row;
         }
     }
 
-    private void UpdateSignals(FrameRowViewModel? row)
+    private void UpdateOverwriteRow(CanFrame frame)
     {
-        Signals.Clear();
-        if (row is null)
+        var key = (frame.Bus, frame.FrameId);
+        if (_overwriteRows.TryGetValue(key, out var row))
         {
-            return;
+            var previous = row.Frame;
+            var display = frame.Clone();
+            display.FrameCount = previous.FrameCount + 1;
+            display.TimeDelta = (ulong)Math.Max(0, frame.Timestamp.ToMicroseconds() - previous.Timestamp.ToMicroseconds());
+            row.SetFrame(display);
+            if (InterpretFrames)
+            {
+                row.Interpretation = Describe(display);
+            }
+        }
+        else
+        {
+            var display = frame.Clone();
+            display.FrameCount = 1;
+            display.TimeDelta = 0;
+            row = CreateRow(display);
+            Frames.Add(row);
+            _overwriteRows[key] = row;
+        }
+    }
+
+    private FrameRowViewModel CreateRow(CanFrame frame) => new(frame)
+    {
+        Interpretation = InterpretFrames ? Describe(frame) : string.Empty,
+    };
+
+    private string Describe(CanFrame frame)
+    {
+        var message = Dbc.FindMessage(frame);
+        if (message is null || message.Signals.Count == 0)
+        {
+            return string.Empty;
         }
 
-        var message = Dbc.FindMessage(row.Frame);
-        if (message is null)
+        var parts = new List<string>();
+        foreach (var signal in message.ActiveSignals(frame))
         {
-            return;
+            var text = signal.ProcessAsText(frame).TrimEnd();
+            if (text.Length > 0)
+            {
+                parts.Add(text);
+            }
         }
 
-        foreach (var signal in message.Signals.Values)
+        return string.Join("; ", parts);
+    }
+
+    private void RegisterFilterEntries(CanFrame frame)
+    {
+        if (!_idFilters.ContainsKey(frame.FrameId))
         {
-            var text = signal.ProcessAsText(row.Frame, outputName: false, outputUnit: false).Trim();
-            var description = signal.TryProcessAsInt(row.Frame, out var intValue) &&
-                              signal.TryGetValueDescription(intValue, out var valueDescription)
-                ? valueDescription
-                : string.Empty;
-            Signals.Add(new SignalRowViewModel(signal.Name, text, signal.UnitName, description));
+            _idFilters[frame.FrameId] = true;
+            var item = new FrameFilterItem(frame.FrameId, frame.IsExtended, OnIdFilterChanged);
+            _allFrameFilters.Add(item);
+            if (MatchesSearch(item.Label))
+            {
+                FrameFilters.Add(item);
+            }
+        }
+
+        if (!_busFilters.ContainsKey(frame.Bus))
+        {
+            _busFilters[frame.Bus] = true;
+            var item = new BusFilterItem(frame.Bus, OnBusFilterChanged);
+            _allBusFilters.Add(item);
+            BusFilters.Add(item);
+        }
+    }
+
+    private bool PassesFilters(CanFrame frame)
+    {
+        if (!_idFilters.TryGetValue(frame.FrameId, out var idVisible) || !idVisible)
+        {
+            return false;
+        }
+
+        if (!_busFilters.TryGetValue(frame.Bus, out var busVisible) || !busVisible)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(FilterSearch) &&
+            !frame.FrameId.ToString("X", CultureInfo.InvariantCulture)
+                .Contains(FilterSearch, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void OnIdFilterChanged(FrameFilterItem item)
+    {
+        _idFilters[item.Id] = item.IsChecked;
+        if (!_suppressFilterRebuild)
+        {
+            RebuildDisplay();
+        }
+    }
+
+    private void OnBusFilterChanged(BusFilterItem item)
+    {
+        _busFilters[item.Bus] = item.IsChecked;
+        if (!_suppressFilterRebuild)
+        {
+            RebuildDisplay();
+        }
+    }
+
+    private void SetAllFilters(bool value)
+    {
+        _suppressFilterRebuild = true;
+        foreach (var item in _allFrameFilters)
+        {
+            item.IsChecked = value;
+        }
+
+        _suppressFilterRebuild = false;
+        RebuildDisplay();
+    }
+
+    private bool MatchesSearch(string label) =>
+        string.IsNullOrEmpty(FilterSearch) ||
+        label.Contains(FilterSearch, StringComparison.OrdinalIgnoreCase);
+
+    private void ApplySearchToFilterList()
+    {
+        FrameFilters.Clear();
+        foreach (var item in _allFrameFilters)
+        {
+            if (MatchesSearch(item.Label))
+            {
+                FrameFilters.Add(item);
+            }
         }
     }
 

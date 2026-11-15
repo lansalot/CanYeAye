@@ -9,6 +9,8 @@ public interface IFileDialogService
 
     Task<string?> PickOpenDbcAsync();
 
+    Task<IReadOnlyList<string>> PickOpenDbcsAsync();
+
     Task<string?> PickOpenScriptAsync();
 
     Task<string?> PickSaveScriptAsync(string suggestedName);

@@ -75,20 +75,30 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
 
     public async Task<string?> PickOpenDbcAsync()
     {
+        var files = await PickOpenDbcsAsync();
+        return files.Count > 0 ? files[0] : null;
+    }
+
+    public async Task<IReadOnlyList<string>> PickOpenDbcsAsync()
+    {
         var storage = topLevel()?.StorageProvider;
         if (storage is null)
         {
-            return null;
+            return [];
         }
 
         var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Open DBC",
-            AllowMultiple = false,
+            Title = "Open DBC files",
+            AllowMultiple = true,
             FileTypeFilter = [DbcFiles, AllFiles],
         });
 
-        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+        return files
+            .Select(file => file.TryGetLocalPath())
+            .Where(path => !string.IsNullOrEmpty(path))
+            .Select(path => path!)
+            .ToArray();
     }
 
     public async Task<string?> PickOpenScriptAsync()

@@ -15,7 +15,14 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow();
+            var window = new MainWindow();
+            desktop.MainWindow = window;
+
+            if (desktop.Args is { Length: > 0 } args && File.Exists(args[0]))
+            {
+                var path = args[0];
+                window.Opened += (_, _) => window.OpenLogFile(path);
+            }
         }
 
         base.OnFrameworkInitializationCompleted();

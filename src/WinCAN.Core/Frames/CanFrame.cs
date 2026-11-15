@@ -1,3 +1,5 @@
+using WinCAN.Core.Formatting;
+
 namespace WinCAN.Core;
 
 /// <summary>Frame kinds supported by SavvyCAN (CommFrame::FrameType).</summary>
@@ -306,9 +308,10 @@ public sealed class CanFrame
     public override string ToString()
     {
         var id = IsExtended ? $"{FrameId:X8}" : $"{FrameId:X3}";
-        var data = Convert.ToHexString(_payload);
+        var data = HexFormat.SpaceDelimited(_payload);
         return $"{Timestamp} bus{Bus} {FrameType} {id} [{_payload.Length}] {data}";
     }
 
     private uint _msgId;
 }
+
