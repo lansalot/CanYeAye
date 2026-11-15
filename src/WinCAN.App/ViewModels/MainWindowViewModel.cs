@@ -90,14 +90,28 @@ public partial class MainWindowViewModel : ObservableObject
 
     public IReadOnlyList<string> ConnectionTypes { get; } =
     [
-        "GVRET (serial)",
-        "GVRET (TCP)",
-        "Lawicel (serial)",
-        "socketcand",
+        "Serial Connection (GVRET)",
+        "Network connection (GVRET)",
+        "LAWICEL / SLCAN Serial",
+        "QT SerialBus Devices (SocketCAN, PeakCAN, etc)",
+        "socketcand (SocketCAN over Ethernet)",
+        "MQTT Connection",
         "CANserver",
-        "CANlogserver",
-        "MQTT",
+        "CANlogserver (TCP ASCII)",
     ];
+
+    public IReadOnlyList<string> QtSerialBusDeviceTypes { get; } =
+    [
+        "passthrucan",
+        "peakcan",
+        "systeccan",
+        "tinycan",
+        "vectorcan",
+        "virtualcan",
+    ];
+
+    [ObservableProperty]
+    private string _selectedQtDeviceType = "passthrucan";
 
     public IReadOnlyList<string> SaveFormatNames { get; } =
         LogFormatRegistry.SaveFilters.Select(f => f.Name).ToList();
@@ -106,7 +120,7 @@ public partial class MainWindowViewModel : ObservableObject
     private string _selectedSaveFormat = LogFormatRegistry.SaveFilters[0].Name;
 
     [ObservableProperty]
-    private string _selectedConnectionType = "GVRET (serial)";
+    private string _selectedConnectionType = "Serial Connection (GVRET)";
 
     [ObservableProperty]
     private string _statusText = "Ready";
@@ -200,6 +214,37 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _sendFd;
 
     public bool IsConnected => _connection is not null;
+
+    public bool IsGvretSerial => SelectedConnectionType == "Serial Connection (GVRET)";
+
+    public bool IsGvretTcp => SelectedConnectionType == "Network connection (GVRET)";
+
+    public bool IsLawicel => SelectedConnectionType == "LAWICEL / SLCAN Serial";
+
+    public bool IsQtSerialBus => SelectedConnectionType == "QT SerialBus Devices (SocketCAN, PeakCAN, etc)";
+
+    public bool IsSocketCand => SelectedConnectionType == "socketcand (SocketCAN over Ethernet)";
+
+    public bool IsMqtt => SelectedConnectionType == "MQTT Connection";
+
+    public bool IsCanServer => SelectedConnectionType == "CANserver";
+
+    public bool IsCanLogServer => SelectedConnectionType == "CANlogserver (TCP ASCII)";
+
+    public bool CanConnect => !IsQtSerialBus;
+
+    partial void OnSelectedConnectionTypeChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsGvretSerial));
+        OnPropertyChanged(nameof(IsGvretTcp));
+        OnPropertyChanged(nameof(IsLawicel));
+        OnPropertyChanged(nameof(IsQtSerialBus));
+        OnPropertyChanged(nameof(IsSocketCand));
+        OnPropertyChanged(nameof(IsMqtt));
+        OnPropertyChanged(nameof(IsCanServer));
+        OnPropertyChanged(nameof(IsCanLogServer));
+        OnPropertyChanged(nameof(CanConnect));
+    }
 
     public string CaptureButtonText => CaptureSuspended ? "Restart Capturing" : "Suspend Capturing";
 
@@ -627,14 +672,14 @@ public partial class MainWindowViewModel : ObservableObject
     {
         return SelectedConnectionType switch
         {
-            "GVRET (serial)" => new GvretConnection(new GvretConnectionOptions
+            "Serial Connection (GVRET)" => new GvretConnection(new GvretConnectionOptions
             {
                 SerialPort = SerialPort,
                 BaudRate = BaudRate,
                 Bus0Speed = Bitrate,
                 Bus1Speed = Bitrate,
             }),
-            "GVRET (TCP)" => new GvretConnection(new GvretConnectionOptions
+            "Network connection (GVRET)" => new GvretConnection(new GvretConnectionOptions
             {
                 Host = Host,
                 TcpPort = Port,
@@ -642,26 +687,28 @@ public partial class MainWindowViewModel : ObservableObject
                 Bus1Speed = Bitrate,
                 EspSerialMode = false,
             }),
-            "Lawicel (serial)" => new LawicelConnection(new LawicelConnectionOptions
+            "LAWICEL / SLCAN Serial" => new LawicelConnection(new LawicelConnectionOptions
             {
                 PortName = SerialPort,
                 BaudRate = BaudRate,
                 Bitrate = Bitrate,
             }),
-            "socketcand" => new SocketCanDConnection(new SocketCanDConnectionOptions
+            "QT SerialBus Devices (SocketCAN, PeakCAN, etc)" =>
+                throw new NotSupportedException("QT SerialBus devices are not implemented in this build."),
+            "socketcand (SocketCAN over Ethernet)" => new SocketCanDConnection(new SocketCanDConnectionOptions
             {
                 Host = Host,
                 Port = Port,
                 BusNames = BusNames.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
             }),
-            "CANserver" => new CanServerConnection(new CanServerConnectionOptions(Host)),
-            "CANlogserver" => new CanLogServerConnection(new CanLogServerConnectionOptions(Host, Port)),
-            "MQTT" => new MqttConnection(new MqttConnectionOptions
+            "MQTT Connection" => new MqttConnection(new MqttConnectionOptions
             {
                 Host = Host,
                 Port = Port,
                 BaseTopic = BaseTopic,
             }),
+            "CANserver" => new CanServerConnection(new CanServerConnectionOptions(Host)),
+            "CANlogserver (TCP ASCII)" => new CanLogServerConnection(new CanLogServerConnectionOptions(Host, Port)),
             _ => throw new InvalidOperationException($"Unknown connection type {SelectedConnectionType}."),
         };
     }

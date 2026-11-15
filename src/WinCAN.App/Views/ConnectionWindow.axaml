@@ -7,41 +7,131 @@
         x:Class="WinCAN.App.Views.ConnectionWindow"
         x:CompileBindings="False"
         x:DataType="vm:MainWindowViewModel"
-        Width="480" Height="560"
+        Width="500"
+        SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
-        Title="WinCAN Connection">
-  <Grid Margin="16" RowDefinitions="Auto,Auto,*,Auto">
-    <TextBlock Grid.Row="0" Text="Connection" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+        Title="New Connection">
+  <Window.Styles>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem">
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="4,4" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem:selected Ellipse">
+      <Setter Property="Fill" Value="#0078D7" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem:selected:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem:selected TextBlock">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </Window.Styles>
 
-    <StackPanel Grid.Row="1" Spacing="8">
-      <ComboBox ItemsSource="{Binding ConnectionTypes}" SelectedItem="{Binding SelectedConnectionType}" />
-      <TextBlock Text="{Binding ConnectionDetail}" TextWrapping="Wrap" FontSize="11" Opacity="0.8" />
+  <StackPanel Margin="16" Spacing="10">
+    <Border BorderBrush="#777" BorderThickness="1" Padding="8">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Connection Type" />
+        <ListBox x:Name="ConnectionTypeList"
+                 ItemsSource="{Binding ConnectionTypes}"
+                 SelectedItem="{Binding SelectedConnectionType}"
+                 Background="Transparent"
+                 BorderThickness="0">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse Width="12" Height="12" Stroke="#777" StrokeThickness="1" Fill="Transparent"
+                         VerticalAlignment="Center" />
+                <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </StackPanel>
+    </Border>
 
-      <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" >
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="Serial port" VerticalAlignment="Center" />
-        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SerialPort}" />
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="Baud rate" VerticalAlignment="Center" />
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding BaudRate}" />
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="Host" VerticalAlignment="Center" />
-        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Host}" />
-        <TextBlock Grid.Row="3" Grid.Column="0" Text="Port" VerticalAlignment="Center" />
-        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Port}" />
-        <TextBlock Grid.Row="4" Grid.Column="0" Text="Bitrate" VerticalAlignment="Center" />
-        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Bitrate}" />
-        <TextBlock Grid.Row="5" Grid.Column="0" Text="Bus names" VerticalAlignment="Center" />
-        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding BusNames}" />
-        <TextBlock Grid.Row="6" Grid.Column="0" Text="MQTT topic" VerticalAlignment="Center" />
-        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding BaseTopic}" />
-        <TextBlock Grid.Row="7" Grid.Column="0" Text="Buses" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding BusSummary}" TextWrapping="Wrap" FontSize="11" />
-      </Grid>
+    <!-- Serial GVRET -->
+    <StackPanel IsVisible="{Binding IsGvretSerial}" Spacing="4">
+      <TextBlock Text="Serial Port:" />
+      <TextBox Text="{Binding SerialPort}" />
+      <TextBlock Text="Serial Port Speed:" />
+      <TextBox Text="{Binding BaudRate}" />
+      <TextBlock Text="CAN Bus Speed:" />
+      <TextBox Text="{Binding Bitrate}" />
     </StackPanel>
 
-    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-      <Button Content="Connect" Command="{Binding ConnectCommand}" Width="100" />
-      <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Width="100" />
+    <!-- Network GVRET -->
+    <StackPanel IsVisible="{Binding IsGvretTcp}" Spacing="4">
+      <TextBlock Text="IP Address:" />
+      <TextBox Text="{Binding Host}" />
+      <TextBlock Text="TCP Port:" />
+      <TextBox Text="{Binding Port}" />
+      <TextBlock Text="CAN Bus Speed:" />
+      <TextBox Text="{Binding Bitrate}" />
+    </StackPanel>
+
+    <!-- Lawicel -->
+    <StackPanel IsVisible="{Binding IsLawicel}" Spacing="4">
+      <TextBlock Text="Serial Port:" />
+      <TextBox Text="{Binding SerialPort}" />
+      <TextBlock Text="Serial Port Speed:" />
+      <TextBox Text="{Binding BaudRate}" />
+      <TextBlock Text="CAN Bus Speed:" />
+      <TextBox Text="{Binding Bitrate}" />
+    </StackPanel>
+
+    <!-- QT SerialBus (not implemented) -->
+    <StackPanel IsVisible="{Binding IsQtSerialBus}" Spacing="4">
+      <TextBlock Text="SerialBus Device Type:" />
+      <ComboBox ItemsSource="{Binding QtSerialBusDeviceTypes}" SelectedItem="{Binding SelectedQtDeviceType}" />
+      <TextBlock Text="QT SerialBus devices are not implemented in this build."
+                 TextWrapping="Wrap" Opacity="0.7" />
+    </StackPanel>
+
+    <!-- socketcand -->
+    <StackPanel IsVisible="{Binding IsSocketCand}" Spacing="4">
+      <TextBlock Text="Host:" />
+      <TextBox Text="{Binding Host}" />
+      <TextBlock Text="Port:" />
+      <TextBox Text="{Binding Port}" />
+      <TextBlock Text="Available Bus(es):" />
+      <TextBox Text="{Binding BusNames}" PlaceholderText="can0,can1" />
+    </StackPanel>
+
+    <!-- MQTT -->
+    <StackPanel IsVisible="{Binding IsMqtt}" Spacing="4">
+      <TextBlock Text="Topic Name:" />
+      <TextBox Text="{Binding BaseTopic}" />
+      <TextBlock Text="Broker Host:" />
+      <TextBox Text="{Binding Host}" />
+      <TextBlock Text="Broker Port:" />
+      <TextBox Text="{Binding Port}" />
+    </StackPanel>
+
+    <!-- CANserver -->
+    <StackPanel IsVisible="{Binding IsCanServer}" Spacing="4">
+      <TextBlock Text="CANserver IP Address:" />
+      <TextBox Text="{Binding Host}" />
+    </StackPanel>
+
+    <!-- CANlogserver -->
+    <StackPanel IsVisible="{Binding IsCanLogServer}" Spacing="4">
+      <TextBlock Text="Host:" />
+      <TextBox Text="{Binding Host}" />
+      <TextBlock Text="Port:" />
+      <TextBox Text="{Binding Port}" />
+    </StackPanel>
+
+    <TextBlock Text="{Binding ConnectionDetail}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
+    <TextBlock Text="{Binding BusSummary}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
+
+    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+      <Button Content="Connect" Command="{Binding ConnectCommand}" IsEnabled="{Binding CanConnect}" Width="110" />
+      <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Width="110" />
       <Button Content="Close" Click="OnCloseClick" Width="90" />
     </StackPanel>
-  </Grid>
+  </StackPanel>
 </Window>
