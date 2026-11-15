@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using WinCAN.App.Services;
 using WinCAN.App.ViewModels;
+using WinCAN.Core.FileFormats;
 using WinCAN.Core.Settings;
 
 namespace WinCAN.App;
@@ -56,6 +57,7 @@ public partial class MainWindow : Window
         }
 
         DataContext = _viewModel;
+        BuildSaveFormatMenu();
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.ScrollToEndRequested += OnScrollToEndRequested;
         _viewModel.RowExpansionChanged += OnRowExpansionChanged;
@@ -128,6 +130,55 @@ public partial class MainWindow : Window
     private void OnZoomOutClick(object? sender, RoutedEventArgs e) => ApplyScale(_uiScale - 0.1);
 
     private void OnZoomInClick(object? sender, RoutedEventArgs e) => ApplyScale(_uiScale + 0.1);
+
+    private void OnZoomResetClick(object? sender, RoutedEventArgs e) => ApplyScale(1.0);
+
+    private void BuildSaveFormatMenu()
+    {
+        SaveFormatMenu.Items.Clear();
+        var selected = _viewModel.SelectedSaveFormat;
+        for (var i = 0; i < LogFormatRegistry.SaveFilters.Count; i++)
+        {
+            var index = i;
+            var filter = LogFormatRegistry.SaveFilters[i];
+            var item = new MenuItem
+            {
+                Header = filter.Name,
+                Tag = index,
+                ToggleType = MenuItemToggleType.CheckBox,
+                IsChecked = string.Equals(filter.Name, selected, StringComparison.Ordinal),
+            };
+            item.Click += OnSaveFormatClick;
+            SaveFormatMenu.Items.Add(item);
+        }
+    }
+
+    private void OnSaveFormatClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item || item.Tag is not int index ||
+            index < 0 || index >= LogFormatRegistry.SaveFilters.Count)
+        {
+            return;
+        }
+
+        _viewModel.SelectedSaveFormat = LogFormatRegistry.SaveFilters[index].Name;
+        UpdateSaveFormatChecks();
+    }
+
+    private void UpdateSaveFormatChecks()
+    {
+        var selected = _viewModel.SelectedSaveFormat;
+        foreach (var item in SaveFormatMenu.Items.OfType<MenuItem>())
+        {
+            if (item.Tag is int index && index >= 0 && index < LogFormatRegistry.SaveFilters.Count)
+            {
+                item.IsChecked = string.Equals(
+                    LogFormatRegistry.SaveFilters[index].Name,
+                    selected,
+                    StringComparison.Ordinal);
+            }
+        }
+    }
 
     private void ApplyScale(double scale)
     {

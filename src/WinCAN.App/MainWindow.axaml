@@ -15,6 +15,7 @@
       <MenuItem Header="_File">
         <MenuItem Header="_Open Log..." Command="{Binding OpenLogCommand}" />
         <MenuItem Header="_Save Log..." Command="{Binding SaveLogCommand}" />
+        <MenuItem x:Name="SaveFormatMenu" Header="Save _Format" />
         <Separator />
         <MenuItem Header="E_xit" Click="OnExitClick" />
       </MenuItem>
@@ -28,11 +29,17 @@
         <MenuItem Header="_Disconnect" Command="{Binding DisconnectCommand}" />
       </MenuItem>
       <MenuItem Header="_View">
+        <MenuItem Header="Suspend _Capturing" ToggleType="CheckBox" IsChecked="{Binding CaptureSuspended, Mode=TwoWay}" />
         <Separator />
         <MenuItem Header="_Clear Frames" Command="{Binding ClearFramesCommand}" />
         <MenuItem Header="_Graph Selected" Command="{Binding GraphCommand}" />
         <MenuItem Header="Frame _Filtering..." Click="OnFrameFilterClick" />
         <MenuItem Header="Show _All Columns" Click="OnShowAllColumnsClick" />
+        <Separator />
+        <MenuItem Header="Zoom _In" Click="OnZoomInClick" />
+        <MenuItem Header="Zoom _Out" Click="OnZoomOutClick" />
+        <MenuItem Header="_Reset Zoom (100%)" Click="OnZoomResetClick" />
+        <MenuItem Header="{Binding UiScaleLabel}" IsEnabled="False" />
       </MenuItem>
       <MenuItem Header="_Tools">
         <MenuItem Header="Send _Frame..." Click="OnSendFrameClick" />
@@ -41,28 +48,6 @@
         <MenuItem Header="_Sniffer..." Click="OnSnifferClick" />
       </MenuItem>
     </Menu>
-
-    <Border DockPanel.Dock="Top" Padding="8" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Button Content="Open Log" Command="{Binding OpenLogCommand}" />
-          <Button Content="Save Log" Command="{Binding SaveLogCommand}" />
-          <ComboBox ItemsSource="{Binding SaveFormatNames}" SelectedItem="{Binding SelectedSaveFormat}" Width="180" />
-          <Button Content="DBC Files..." Click="OnDbcManagerClick" />
-          <Separator Width="1" />
-          <Button Content="Connection..." Click="OnConnectionClick" />
-          <Button Content="Connect" Command="{Binding ConnectCommand}" />
-          <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-          <Separator Width="1" />
-          <Button Content="Clear" Command="{Binding ClearFramesCommand}" />
-          <CheckBox Content="Suspend" IsChecked="{Binding CaptureSuspended}" />
-          <Separator Width="1" />
-          <Button Content="-" Click="OnZoomOutClick" Width="30" Padding="0" ToolTip.Tip="Scale down 10%" />
-          <TextBlock Text="{Binding UiScaleLabel}" VerticalAlignment="Center" Width="46" TextAlignment="Center" />
-          <Button Content="+" Click="OnZoomInClick" Width="30" Padding="0" ToolTip.Tip="Scale up 10%" />
-        </StackPanel>
-      </ScrollViewer>
-    </Border>
 
     <Border DockPanel.Dock="Bottom" Padding="8,4" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
       <TextBlock Text="{Binding StatusText}" TextWrapping="NoWrap" />

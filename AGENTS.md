@@ -116,7 +116,7 @@ dotnet test --filter FullyQualifiedName~FileFormats
 - `WinCAN.App` (Avalonia): main window with the SavvyCAN right-hand frame panel (total/FPS,
   suspend, normalize, clear, keep-filters, auto-scroll, overwrite mode with counts, interpret
   frames, expand/collapse, bus filtering), reorderable/hideable grid columns (incl. ASCII),
-  in-row DBC interpretation, status bar, and 10%-step UI scaling from the toolbar. Connection
+  in-row DBC interpretation, status bar, and 10%-step UI scaling (View menu). Connection
   dialog, non-modal send-frame window, DBC manager (multi-file load/remove/reorder), log-loading
   progress dialog, scripting window, OBD-II poller window, sniffer window, and a compact
   dockable floating frame-filter window whose labels include DBC message names when interpret
