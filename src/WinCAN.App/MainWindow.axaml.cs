@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using WinCAN.App.Services;
@@ -11,6 +12,7 @@ public partial class MainWindow : Window
     private readonly MainWindowViewModel _viewModel;
     private readonly SettingsStore _settingsStore = new();
     private readonly AppSettings _settings;
+    private Views.SendFrameWindow? _sendFrameWindow;
 
     public MainWindow()
     {
@@ -35,6 +37,8 @@ public partial class MainWindow : Window
         }
 
         DataContext = _viewModel;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        ApplyLogVisibility();
 
         Closed += async (_, _) =>
         {
@@ -75,6 +79,19 @@ public partial class MainWindow : Window
         await window.ShowDialog(this);
     }
 
+    private void OnSendFrameClick(object? sender, RoutedEventArgs e)
+    {
+        if (_sendFrameWindow is { IsVisible: true })
+        {
+            _sendFrameWindow.Activate();
+            return;
+        }
+
+        _sendFrameWindow = new Views.SendFrameWindow(_viewModel);
+        _sendFrameWindow.Closed += (_, _) => _sendFrameWindow = null;
+        _sendFrameWindow.Show(this);
+    }
+
     private void OnScriptingClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel.FileDialogs is null)
@@ -101,5 +118,59 @@ public partial class MainWindow : Window
     {
         var viewModel = new SnifferWindowViewModel(_viewModel.ConnectionManager);
         new Views.SnifferWindow(viewModel).Show(this);
+    }
+
+    private void OnToggleColumnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem item || item.Tag is not string header)
+        {
+            return;
+        }
+
+        var column = FrameGrid.Columns.FirstOrDefault(c =>
+            string.Equals(c.Header as string, header, StringComparison.Ordinal));
+        if (column is not null)
+        {
+            column.IsVisible = item.IsChecked;
+        }
+    }
+
+    private void OnShowAllColumnsClick(object? sender, RoutedEventArgs e)
+    {
+        foreach (var column in FrameGrid.Columns)
+        {
+            column.IsVisible = true;
+        }
+
+        if (FrameGrid.ContextMenu is { } menu)
+        {
+            foreach (var item in menu.Items.OfType<MenuItem>())
+            {
+                if (item.Tag is string)
+                {
+                    item.IsChecked = true;
+                }
+            }
+        }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainWindowViewModel.ShowLog))
+        {
+            ApplyLogVisibility();
+        }
+    }
+
+    private void ApplyLogVisibility()
+    {
+        if (FrameArea.RowDefinitions.Count < 3)
+        {
+            return;
+        }
+
+        var visible = _viewModel.ShowLog;
+        FrameArea.RowDefinitions[1].Height = new GridLength(visible ? 4 : 0);
+        FrameArea.RowDefinitions[2].Height = new GridLength(visible ? 180 : 0);
     }
 }

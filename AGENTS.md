@@ -113,9 +113,10 @@ dotnet test --filter FullyQualifiedName~FileFormats
   `Obd2Poller`). `WinCAN.Core.Scripting.ScriptHost` runs SavvyCAN `.js` files on Jint with the
   `host`/`can`/`isotp`/`uds` globals and positional callbacks; all four `examples/*.js` run
   unmodified.
-- `WinCAN.App` (Avalonia): main window (connection panel, frame grid, log, DBC signals,
-  ScottPlot graph), scripting window, OBD-II poller window and sniffer window. The app launches
-  and renders; verified with screen captures.
+- `WinCAN.App` (Avalonia): main window (frame grid with reorderable/hideable columns,
+  status bar, collapsible sidebar, optional log pane), connection dialog, non-modal send-frame
+  window, scripting window, OBD-II poller window and sniffer window. The app launches and
+  renders; verified with screen captures.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 

@@ -144,8 +144,14 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _showSidePanel = true;
 
+    [ObservableProperty]
+    private bool _showLog;
+
     [RelayCommand]
     private void ToggleSidePanel() => ShowSidePanel = !ShowSidePanel;
+
+    [RelayCommand]
+    private void ToggleLog() => ShowLog = !ShowLog;
 
     public bool IsConnected => _connection is not null;
 
