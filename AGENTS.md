@@ -91,10 +91,11 @@ dotnet test --filter FullyQualifiedName~FileFormats
 - `WinCAN.Core`: `CanFrame` / `FrameTimestamp` (CommFrame semantics), `CanFilter`, `CanIdParser`,
   `FrameStore`, settings store, and the log-format layer
   (`src/WinCAN.Core/FileFormats`, `LogFormatRegistry`).
-- Log formats implemented: native GVRET CSV, CRTD, BusMaster, Microchip, Vector trace,
-  IXXAT MiniLog, CAN-DO, Vehicle Spy, candump, Lawicel, PCAN, CANalyzer ASC, CARBUS, CANHacker,
-  Generic CSV, Cabana, CANOpen Magic, IXXAT CSV, CANWise. Not yet: BLF, pcap/Wireshark,
-  Tesla AP, CANServer, Kvaser, CLX000 (registry slots exist, `Format` is null).
+- Log formats implemented: native GVRET CSV (V1/V2 incl. FD/FlexRay), CRTD, BusMaster,
+  Microchip, Vector trace, IXXAT MiniLog, CAN-DO, Vehicle Spy, candump, Lawicel, PCAN,
+  CANalyzer ASC, CARBUS, CANHacker, Generic CSV, Cabana, CANOpen Magic, IXXAT CSV, CANWise,
+  Kvaser (decimal/hex), CANalyzer BLF (containers + zlib), pcap/pcapng (SocketCAN and Linux
+  cooked captures), Tesla AP snapshots, CANServer binary and CLX000.
 - `WinCAN.Connections`: `ICanConnection`, `CanConnectionManager`, option records, text
   protocols (`GvretProtocol`, `LawicelProtocol`, `SocketCanDProtocol`, `CanServerProtocol`,
   `CanLogServerProtocol`, `MqttFrameCodec`), and transport implementations over serial/TCP/UDP

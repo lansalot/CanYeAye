@@ -8,8 +8,7 @@ public sealed record LogFormatFilter(string Name, string Pattern, ILogFormat? Fo
 
 /// <summary>
 /// SavvyCAN's <c>loadFilters()</c> / <c>saveFilters()</c> tables and its autodetect order.
-/// Filter indices are part of the UI contract, so they must stay in the reference order even
-/// though some entries (BLF, pcap, Tesla AP, CANServer, Kvaser, CLX000) have no loader yet.
+/// Filter indices are part of the UI contract, so they must stay in the reference order.
 /// </summary>
 public static class LogFormatRegistry
 {
@@ -32,6 +31,13 @@ public static class LogFormatRegistry
     public static CanOpenFormat CanOpen { get; } = new();
     public static IxxatCsvFormat IxxatCsv { get; } = new();
     public static CanWiseFormat CanWise { get; } = new();
+    public static KvaserFormat KvaserDecimal { get; } = new(useHex: false);
+    public static KvaserFormat KvaserHex { get; } = new(useHex: true);
+    public static TeslaApFormat TeslaAp { get; } = new();
+    public static CanServerLogFormat CanServerLog { get; } = new();
+    public static PcapFormat Pcap { get; } = new();
+    public static BlfFormat Blf { get; } = new();
+    public static Clx000Format Clx000 { get; } = new();
 
     /// <summary>Load dialog entries; the index is the <c>filterIndex</c> of <see cref="Load"/>.</summary>
     public static IReadOnlyList<LogFormatFilter> LoadFilters { get; } =
@@ -48,20 +54,20 @@ public static class LogFormatRegistry
         new("Candump/Kayak (*.log *.LOG)", "*.log;*.LOG", Candump),                           // 9
         new("CANDump Lawicel (*.txt *.TXT *.LOG *.log)", "*.txt;*.TXT;*.LOG;*.log", Lawicel), // 10
         new("PCAN Viewer (*.trc *.TRC)", "*.trc;*.TRC", Pcan),                                // 11
-        new("Kvaser Log Decimal (*.txt *.TXT)", "*.txt;*.TXT", null),                         // 12
-        new("Kvaser Log Hex (*.txt *.TXT)", "*.txt;*.TXT", null),                             // 13
+        new("Kvaser Log Decimal (*.txt *.TXT)", "*.txt;*.TXT", KvaserDecimal),                 // 12
+        new("Kvaser Log Hex (*.txt *.TXT)", "*.txt;*.TXT", KvaserHex),                         // 13
         new("CANalyzer Ascii Log (*.asc *.ASC)", "*.asc;*.ASC", CanalyzerAsc),                // 14
-        new("CANalyzer Binary Log Files (*.blf *.BLF)", "*.blf;*.BLF", null),                 // 15
+        new("CANalyzer Binary Log Files (*.blf *.BLF)", "*.blf;*.BLF", Blf),                    // 15
         new("CARBUS Analyzer Trace Files (*.trc *.TRC)", "*.trc;*.TRC", CarBus),              // 16
         new("CANHacker Trace Files (*.trc *.TRC)", "*.trc;*.TRC", CanHacker),                 // 17
         new("Generic ID/Data CSV (*.csv *.CSV)", "*.csv;*.CSV", GenericCsv),                  // 18
         new("Cabana Log (*.csv *.CSV)", "*.csv;*.CSV", Cabana),                               // 19
         new("CANOpen Magic (*.csv *.CSV)", "*.csv;*.CSV", CanOpen),                           // 20
-        new("Tesla Autopilot Snapshot (*.CAN *.can)", "*.CAN;*.can", null),                   // 21
-        new("CLX000 (*.txt *.TXT)", "*.txt;*.TXT", null),                                     // 22
-        new("CANServer Binary Log (*.log *.LOG)", "*.log;*.LOG", null),                       // 23
-        new("Wireshark (*.pcap *.PCAP *.pcapng *.PCAPNG)", "*.pcap;*.PCAP;*.pcapng;*.PCAPNG", null), // 24
-        new("Wireshark SocketCAN (*.pcap *.PCAP)", "*.pcap;*.PCAP", null),                    // 25
+        new("Tesla Autopilot Snapshot (*.CAN *.can)", "*.CAN;*.can", TeslaAp),                   // 21
+        new("CLX000 (*.txt *.TXT)", "*.txt;*.TXT", Clx000),                                     // 22
+        new("CANServer Binary Log (*.log *.LOG)", "*.log;*.LOG", CanServerLog),                   // 23
+        new("Wireshark (*.pcap *.PCAP *.pcapng *.PCAPNG)", "*.pcap;*.PCAP;*.pcapng;*.PCAPNG", Pcap), // 24
+        new("Wireshark SocketCAN (*.pcap *.PCAP)", "*.pcap;*.PCAP", Pcap),                    // 25
         new("IXXAT CSV export (*.csv)", "*.csv", IxxatCsv),                                   // 26
         new("CANWise Log (*.log)", "*.log", CanWise),                                         // 27
     ];
@@ -85,12 +91,15 @@ public static class LogFormatRegistry
     ];
 
     /// <summary>
-    /// SavvyCAN's autodetect order. Formats WinCAN cannot read yet are simply absent, so a BLF
-    /// or pcap still ends up reported as "could not autodetect" rather than misdetected.
+    /// SavvyCAN's autodetect order (BLF and pcap first because they match on magic numbers).
     /// </summary>
     private static readonly ILogFormat[] DetectionOrder =
     [
+        Blf,
         NativeCsv,
+        Pcap,
+        TeslaAp,
+        CanServerLog,
         CanalyzerAsc,
         Crtd,
         VectorTrace,
@@ -105,6 +114,9 @@ public static class LogFormatRegistry
         IxxatMiniLog,
         Microchip,
         CanDo,
+        KvaserHex,
+        KvaserDecimal,
+        Clx000,
         Lawicel,
         CanWise,
         IxxatCsv,
@@ -228,3 +240,5 @@ public static class LogFormatRegistry
         return null;
     }
 }
+
+

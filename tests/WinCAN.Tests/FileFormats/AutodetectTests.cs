@@ -93,6 +93,6 @@ public class AutodetectTests
         Assert.Equal("CANWise Log", LogFormatRegistry.LoadFilters[27].Format?.Name);
         Assert.Equal("GVRET Logs", LogFormatRegistry.SaveFilters[0].Format?.Name);
         Assert.Equal("PCAN Viewer", LogFormatRegistry.SaveFilters[12].Format?.Name);
-        Assert.Null(LogFormatRegistry.LoadFilters[15].Format); // BLF not supported yet
+        Assert.Equal("CANalyzer Binary Log Files", LogFormatRegistry.LoadFilters[15].Format?.Name);
     }
 }
