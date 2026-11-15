@@ -106,6 +106,10 @@ dotnet test --filter FullyQualifiedName~FileFormats
   `VFrameFormat`/`CANFD_BRS` sync) and `DbcDatabase` (multi-file lookup, J1939/GMLAN).
   Validated against SavvyCAN's `examples/*.dbc` and the 17 real files in `DBCsamples`
   (copied to `tests/WinCAN.Tests/Fixtures/DbcSamples`).
+- `WinCAN.Core.Protocols`: ISO-TP transport (`IsoTpHandler`, single/multi-frame, flow control,
+  segmented TX) and UDS (`UdsHandler`). `WinCAN.Core.Scripting.ScriptHost` runs SavvyCAN `.js`
+  files on Jint with the `host`/`can`/`isotp`/`uds` globals and positional callbacks; all four
+  `examples/*.js` run unmodified.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 
