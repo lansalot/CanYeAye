@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WinCAN.Connections;
 using WinCAN.Core;
+using WinCAN.Core.Formatting;
 
 namespace WinCAN.App.ViewModels;
 
@@ -112,7 +113,7 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
 
         row.Count++;
         row.PendingRateCount++;
-        row.Data = Convert.ToHexString(frame.Payload);
+        row.Data = HexFormat.SpaceDelimited(frame.Payload);
         row.Type = frame.FrameType switch
         {
             FrameType.CanFdDataFrame => "FD",
@@ -133,3 +134,4 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
         }
     }
 }
+

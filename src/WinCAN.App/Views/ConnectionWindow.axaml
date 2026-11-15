@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:WinCAN.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="WinCAN.App.Views.ConnectionWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:MainWindowViewModel"
+        Width="480" Height="560"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="WinCAN Connection">
+  <Grid Margin="16" RowDefinitions="Auto,Auto,*,Auto">
+    <TextBlock Grid.Row="0" Text="Connection" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+
+    <StackPanel Grid.Row="1" Spacing="8">
+      <ComboBox ItemsSource="{Binding ConnectionTypes}" SelectedItem="{Binding SelectedConnectionType}" />
+      <TextBlock Text="{Binding ConnectionDetail}" TextWrapping="Wrap" FontSize="11" Opacity="0.8" />
+
+      <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" >
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Serial port" VerticalAlignment="Center" />
+        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SerialPort}" />
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Baud rate" VerticalAlignment="Center" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding BaudRate}" />
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Host" VerticalAlignment="Center" />
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Host}" />
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Port" VerticalAlignment="Center" />
+        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Port}" />
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Bitrate" VerticalAlignment="Center" />
+        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Bitrate}" />
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Bus names" VerticalAlignment="Center" />
+        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding BusNames}" />
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="MQTT topic" VerticalAlignment="Center" />
+        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding BaseTopic}" />
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Buses" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding BusSummary}" TextWrapping="Wrap" FontSize="11" />
+      </Grid>
+    </StackPanel>
+
+    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+      <Button Content="Connect" Command="{Binding ConnectCommand}" Width="100" />
+      <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Width="100" />
+      <Button Content="Close" Click="OnCloseClick" Width="90" />
+    </StackPanel>
+  </Grid>
+</Window>

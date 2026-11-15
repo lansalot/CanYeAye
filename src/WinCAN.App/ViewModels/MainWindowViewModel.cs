@@ -10,6 +10,7 @@ using WinCAN.Connections.Transports;
 using WinCAN.Core;
 using WinCAN.Core.Dbc;
 using WinCAN.Core.FileFormats;
+using WinCAN.Core.Formatting;
 using WinCAN.Core.Logging;
 
 namespace WinCAN.App.ViewModels;
@@ -139,6 +140,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _sendFd;
+
+    [ObservableProperty]
+    private bool _showSidePanel = true;
+
+    [RelayCommand]
+    private void ToggleSidePanel() => ShowSidePanel = !ShowSidePanel;
 
     public bool IsConnected => _connection is not null;
 
@@ -377,7 +384,7 @@ public partial class MainWindowViewModel : ObservableObject
             frame.SetPayload(data);
             frame.SetReceived(false);
             await ConnectionManager.SendFrameAsync(frame);
-            LogBus.Info($"TX bus {bus} id {CanIdParser.FormatId(id, frame.IsExtended)} [{data.Length}] {Convert.ToHexString(data)}");
+            LogBus.Info($"TX bus {bus} id {CanIdParser.FormatId(id, frame.IsExtended)} [{data.Length}] {HexFormat.SpaceDelimited(data)}");
         }
         catch (Exception ex)
         {
@@ -591,3 +598,4 @@ public partial class MainWindowViewModel : ObservableObject
         return result;
     }
 }
+

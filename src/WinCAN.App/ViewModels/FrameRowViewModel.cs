@@ -1,4 +1,5 @@
 using WinCAN.Core;
+using WinCAN.Core.Formatting;
 
 namespace WinCAN.App.ViewModels;
 
@@ -31,7 +32,7 @@ public sealed class FrameRowViewModel
 
     public string Length => Frame.Length.ToString();
 
-    public string Data => Convert.ToHexString(Frame.Payload);
+    public string Data => HexFormat.SpaceDelimited(Frame.Payload);
 
     public bool Extended => Frame.IsExtended;
 
@@ -68,3 +69,4 @@ public sealed class FrameRowViewModel
         $"{Frame.Timestamp}  {Type}  {Id}  [{Length}]  {Data}  bus {Bus}" +
         (string.IsNullOrEmpty(Flags) ? string.Empty : $"  {Flags}");
 }
+

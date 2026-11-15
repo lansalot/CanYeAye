@@ -69,6 +69,12 @@ public partial class MainWindow : Window
 
     private void OnExitClick(object? sender, RoutedEventArgs e) => Close();
 
+    private async void OnConnectionClick(object? sender, RoutedEventArgs e)
+    {
+        var window = new Views.ConnectionWindow(_viewModel);
+        await window.ShowDialog(this);
+    }
+
     private void OnScriptingClick(object? sender, RoutedEventArgs e)
     {
         if (_viewModel.FileDialogs is null)

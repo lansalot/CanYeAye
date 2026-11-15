@@ -21,10 +21,14 @@
         <MenuItem Header="_Load DBC..." Command="{Binding LoadDbcCommand}" />
       </MenuItem>
       <MenuItem Header="_Connection">
+        <MenuItem Header="Connection _Settings..." Click="OnConnectionClick" />
+        <Separator />
         <MenuItem Header="_Connect" Command="{Binding ConnectCommand}" />
         <MenuItem Header="_Disconnect" Command="{Binding DisconnectCommand}" />
       </MenuItem>
       <MenuItem Header="_View">
+        <MenuItem Header="_Show Side Panel" ToggleType="CheckBox" IsChecked="{Binding ShowSidePanel, Mode=TwoWay}" />
+        <Separator />
         <MenuItem Header="_Clear Frames" Command="{Binding ClearFramesCommand}" />
         <MenuItem Header="_Graph Selected" Command="{Binding GraphCommand}" />
       </MenuItem>
@@ -38,6 +42,7 @@
         <ComboBox ItemsSource="{Binding SaveFormatNames}" SelectedItem="{Binding SelectedSaveFormat}" Width="180" />
         <Button Content="Load DBC" Command="{Binding LoadDbcCommand}" />
         <Separator Width="1" />
+        <Button Content="Connection..." Click="OnConnectionClick" />
         <Button Content="Connect" Command="{Binding ConnectCommand}" />
         <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
         <Separator Width="1" />
@@ -46,38 +51,19 @@
         <Button Content="Scripting" Click="OnScriptingClick" />
         <Button Content="OBD-II" Click="OnObd2Click" />
         <Button Content="Sniffer" Click="OnSnifferClick" />
+        <ToggleButton Content="Side Panel" IsChecked="{Binding ShowSidePanel, Mode=TwoWay}" />
         <CheckBox Content="Suspend" IsChecked="{Binding CaptureSuspended}" />
-        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Margin="16,0,0,0" />
         </StackPanel>
       </ScrollViewer>
     </Border>
 
-    <Grid ColumnDefinitions="320,*">
-      <ScrollViewer Grid.Column="0">
-        <StackPanel Margin="8" Spacing="8">
-          <TextBlock Text="Connection" FontWeight="Bold" />
-          <ComboBox ItemsSource="{Binding ConnectionTypes}" SelectedItem="{Binding SelectedConnectionType}" />
-          <TextBlock Text="{Binding ConnectionDetail}" TextWrapping="Wrap" FontSize="11" />
-          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" >
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Serial port" />
-            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SerialPort}" />
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Baud rate" />
-            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding BaudRate}" />
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Host" />
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Host}" />
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Port" />
-            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Port}" />
-            <TextBlock Grid.Row="4" Grid.Column="0" Text="Bitrate" />
-            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Bitrate}" />
-            <TextBlock Grid.Row="5" Grid.Column="0" Text="Bus names" />
-            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding BusNames}" />
-            <TextBlock Grid.Row="6" Grid.Column="0" Text="MQTT topic" />
-            <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding BaseTopic}" />
-            <TextBlock Grid.Row="7" Grid.Column="0" Text="Buses" />
-            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding BusSummary}" TextWrapping="Wrap" FontSize="11" />
-          </Grid>
+    <Border DockPanel.Dock="Bottom" Padding="8,4" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <TextBlock Text="{Binding StatusText}" TextWrapping="NoWrap" />
+    </Border>
 
-          <Separator />
+    <Grid ColumnDefinitions="Auto,*">
+      <ScrollViewer Grid.Column="0" Width="320" IsVisible="{Binding ShowSidePanel}">
+        <StackPanel Margin="8" Spacing="8">
           <TextBlock Text="Send Frame" FontWeight="Bold" />
           <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Bus" />
@@ -110,10 +96,10 @@
                   GridLinesVisibility="Horizontal" CanUserReorderColumns="True" CanUserResizeColumns="True">
           <DataGrid.Columns>
             <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="130" />
-            <DataGridTextColumn Header="Bus" Binding="{Binding Bus}" Width="50" />
+            <DataGridTextColumn Header="Bus" Binding="{Binding Bus}" Width="60" />
             <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="80" />
             <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="100" />
-            <DataGridTextColumn Header="Len" Binding="{Binding Length}" Width="50" />
+            <DataGridTextColumn Header="Len" Binding="{Binding Length}" Width="60" />
             <DataGridTextColumn Header="Data" Binding="{Binding Data}" Width="*" />
             <DataGridTextColumn Header="Flags" Binding="{Binding Flags}" Width="110" />
           </DataGrid.Columns>
@@ -132,3 +118,4 @@
     </Grid>
   </DockPanel>
 </Window>
+
