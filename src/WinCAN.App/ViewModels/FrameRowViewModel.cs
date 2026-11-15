@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using WinCAN.App.Formatting;
 using WinCAN.Core;
 using WinCAN.Core.Formatting;
 
@@ -34,7 +35,7 @@ public partial class FrameRowViewModel : ObservableObject
 
     public string Ascii => ToAscii(Frame.Payload);
 
-    public string Time => Frame.Timestamp.ToString();
+    public string Time => TimeFormat.LocalTime(Frame.Timestamp);
 
     public string Bus => Frame.Bus.ToString();
 
@@ -114,3 +115,5 @@ public partial class FrameRowViewModel : ObservableObject
         });
     }
 }
+
+

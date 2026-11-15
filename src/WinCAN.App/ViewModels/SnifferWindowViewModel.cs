@@ -3,6 +3,7 @@ using System.Globalization;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using WinCAN.App.Formatting;
 using WinCAN.Connections;
 using WinCAN.Core;
 using WinCAN.Core.Formatting;
@@ -121,7 +122,7 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
             FrameType.ErrorFrame => "ERR",
             _ => "CAN",
         };
-        row.LastSeen = frame.Timestamp.ToString();
+        row.LastSeen = TimeFormat.LocalTime(frame.Timestamp);
         Status = $"{_total:N0} frames, {Rows.Count} IDs";
     }
 
@@ -134,4 +135,6 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
         }
     }
 }
+
+
 
