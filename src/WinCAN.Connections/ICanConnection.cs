@@ -46,6 +46,9 @@ public interface ICanConnection : IAsyncDisposable
 
     event EventHandler<ConnectionStateChangedEventArgs>? StateChanged;
 
+    /// <summary>Raised when a transport discovers a different number/name of buses.</summary>
+    event EventHandler? BusesChanged;
+
     Task ConnectAsync(CancellationToken cancellationToken = default);
 
     Task DisconnectAsync(CancellationToken cancellationToken = default);

@@ -44,7 +44,10 @@ public partial class MainWindow : Window
         _viewModel.SerialPort = _settings.LastSerialPort ?? _viewModel.SerialPort;
         _viewModel.BaudRate = _settings.LastBaudRate;
         _viewModel.Host = _settings.SocketCandHost ?? _viewModel.Host;
-        _viewModel.Port = _settings.SocketCandPort;
+        _viewModel.SocketCandPort = _settings.SocketCandPort;
+        _viewModel.GvretTcpPort = _settings.GvretTcpPort;
+        _viewModel.MqttPort = _settings.MqttPort;
+        _viewModel.CanLogServerPort = _settings.CanLogServerPort;
         if (_settings.LastConnectionType is { } connectionType &&
             _viewModel.ConnectionTypes.Contains(connectionType))
         {
@@ -116,7 +119,10 @@ public partial class MainWindow : Window
                 LastSerialPort = _viewModel.SerialPort,
                 LastBaudRate = _viewModel.BaudRate,
                 SocketCandHost = _viewModel.Host,
-                SocketCandPort = _viewModel.Port,
+                SocketCandPort = _viewModel.SocketCandPort,
+                GvretTcpPort = _viewModel.GvretTcpPort,
+                MqttPort = _viewModel.MqttPort,
+                CanLogServerPort = _viewModel.CanLogServerPort,
             });
         }
         catch
@@ -491,4 +497,3 @@ public partial class MainWindow : Window
     }
 
 }
-

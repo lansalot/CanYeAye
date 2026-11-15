@@ -256,6 +256,43 @@ F1 09              → comm validation
 - CAN FD: RX opcode 20, TX opcode 20, config opcodes 21/22 as above. BRS carried on RX and TX; ESI is not transported by GVRET.
 - **FlexRay: none.** GVRET's "extended buses" (opcode 13/14) are SWCAN + LIN1 + LIN2. FlexRay only exists in the separate `PICOFLEXRAY` driver (libusb, VID `0x3801`, PID `0xddcc`, serial prefix `"picoflex"`, bulk-in `0x81`, vendor-out ops `0x90`/`0x91`), which is out of scope here and should get its own spec.
 
+### 1.8 Device firmware cross-check (`collin80/GVRET`)
+
+The firmware (`GVRET.ino`, `sys_io.cpp`) is the other half of the protocol and confirms
+the client-side grammar above:
+
+- Opcodes are the `CAN_COMMAND` enum: 0 build frame, 1 time sync, 2 digital inputs, 3 analog
+  inputs, 4 set digital outputs, 5 setup CAN bus, 6 CAN bus params, 7 device info, 8 single-wire
+  mode, 9 keepalive, 10 system type, 11 echo frame, 12 number of buses, 13 extended buses,
+  14 setup extended buses, 20 build FD frame, 21 setup FD, 22 get FD settings.
+- Frame and command replies always end with an XOR checksum byte. The client parser reads the
+  fixed payload length and ignores the checksum because it is not `0xF1`.
+- Keepalive reply is **4 bytes**: `F1 09 DE AD` (opcode + 2 fixed bytes). Only `F1 09` matters
+  to the client; the two trailing bytes are discarded by the idle scanner.
+- Device info reply is **8 bytes**: `F1 07 buildLo buildHi eepromVer fileType autoLog singleWire`.
+- Extended-buses reply is **17 bytes**: `F1 0D` plus the 15-byte SWCAN/LIN payload.
+- `GET_NUMBUSES` on the stock Due firmware always answers **3** (CAN0, CAN1, SWCAN) regardless
+  of whether SWCAN is enabled, so the reported bus count is an upper bound.
+- `SETUP_CANBUS` consumes exactly 8 bytes after the opcode (bus0 word, bus1 word); the client's
+  trailing `0x00` is harmless and ignored by the idle scanner.
+- CAN bus params flags: bit0 = enabled, bit4 = listen-only, bit6 (bus 1 only) = single-wire.
+
+**Verified live device** (`192.168.1.57:23`, TCP; single client, so SavvyCAN must be closed):
+
+```
+→ E7 E7 F1 0C F1 06 F1 07 F1 16 F1 01 F1 09
+← F1 0C 01                                  number of buses = 1
+← F1 06 01 20 A1 07 00  00 00 00 00 00       CAN0 enabled @ 500 kbit/s, CAN1 disabled
+← F1 07 6A 02 20 00 00 00                    build 618, EEPROM v0x20, file type 0, single-wire 0
+← F1 01 71 56 1D 6B                          time sync (device µs)
+```
+
+The transport reports CONNECTED after the bus-parameters/validation reply, exposes one bus, and
+the bus range in the UI follows the device-reported count (`GvretConnection.BusesChanged` →
+`CanConnectionManager` renumbering). Deterministic coverage lives in
+`tests/WinCAN.Tests/Transports/GvretConnectionTests.cs` (mock TCP device: init preamble, bus
+config, frame reception, no-reply timeout) and `CanConnectionManagerTests.cs`.
+
 ---
 
 ## 2. Lawicel ASCII serial (`LAWICELSerial`)

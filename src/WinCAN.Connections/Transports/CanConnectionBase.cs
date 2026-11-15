@@ -26,6 +26,8 @@ public abstract class CanConnectionBase : ICanConnection
 
     public event EventHandler<ConnectionStateChangedEventArgs>? StateChanged;
 
+    public event EventHandler? BusesChanged;
+
     public abstract Task ConnectAsync(CancellationToken cancellationToken = default);
 
     public abstract Task DisconnectAsync(CancellationToken cancellationToken = default);
@@ -48,7 +50,11 @@ public abstract class CanConnectionBase : ICanConnection
 
     protected void Publish(CanFrame frame) => FrameReceived?.Invoke(this, frame);
 
-    protected void SetBuses(IReadOnlyList<CanBusInfo> buses) => _buses = buses;
+    protected void SetBuses(IReadOnlyList<CanBusInfo> buses)
+    {
+        _buses = buses;
+        BusesChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     protected void SetState(ConnectionState state, string? message = null)
     {

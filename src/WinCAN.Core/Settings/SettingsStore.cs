@@ -26,6 +26,12 @@ public sealed record AppSettings
 
     public int SocketCandPort { get; init; } = 29536;
 
+    public int GvretTcpPort { get; init; } = 23;
+
+    public int MqttPort { get; init; } = 1883;
+
+    public int CanLogServerPort { get; init; } = 23;
+
     public bool TimestampAbsolute { get; init; }
 
     public bool ShowDecimalIds { get; init; }

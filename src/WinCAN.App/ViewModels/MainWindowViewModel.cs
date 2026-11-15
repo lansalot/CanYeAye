@@ -187,7 +187,16 @@ public partial class MainWindowViewModel : ObservableObject
     private string _host = "127.0.0.1";
 
     [ObservableProperty]
-    private int _port = 29536;
+    private int _gvretTcpPort = 23;
+
+    [ObservableProperty]
+    private int _socketCandPort = 29536;
+
+    [ObservableProperty]
+    private int _mqttPort = 1883;
+
+    [ObservableProperty]
+    private int _canLogServerPort = 23;
 
     [ObservableProperty]
     private uint _bitrate = 500_000;
@@ -682,7 +691,7 @@ public partial class MainWindowViewModel : ObservableObject
             "Network connection (GVRET)" => new GvretConnection(new GvretConnectionOptions
             {
                 Host = Host,
-                TcpPort = Port,
+                TcpPort = GvretTcpPort,
                 Bus0Speed = Bitrate,
                 Bus1Speed = Bitrate,
                 EspSerialMode = false,
@@ -698,17 +707,17 @@ public partial class MainWindowViewModel : ObservableObject
             "socketcand (SocketCAN over Ethernet)" => new SocketCanDConnection(new SocketCanDConnectionOptions
             {
                 Host = Host,
-                Port = Port,
+                Port = SocketCandPort,
                 BusNames = BusNames.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
             }),
             "MQTT Connection" => new MqttConnection(new MqttConnectionOptions
             {
                 Host = Host,
-                Port = Port,
+                Port = MqttPort,
                 BaseTopic = BaseTopic,
             }),
             "CANserver" => new CanServerConnection(new CanServerConnectionOptions(Host)),
-            "CANlogserver (TCP ASCII)" => new CanLogServerConnection(new CanLogServerConnectionOptions(Host, Port)),
+            "CANlogserver (TCP ASCII)" => new CanLogServerConnection(new CanLogServerConnectionOptions(Host, CanLogServerPort)),
             _ => throw new InvalidOperationException($"Unknown connection type {SelectedConnectionType}."),
         };
     }
@@ -1063,6 +1072,3 @@ public partial class MainWindowViewModel : ObservableObject
         return result;
     }
 }
-
-
-

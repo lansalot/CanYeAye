@@ -320,7 +320,10 @@ public sealed class GvretConnection : CanConnectionBase
                 _protocol.Feed(buffer.AsSpan(0, read));
             }
 
-            if (!cancellationToken.IsCancellationRequested)
+            // Only report a device-initiated close while the link was healthy. A
+            // deliberate close after a failure (Error) or Disconnect must not
+            // overwrite that state.
+            if (!cancellationToken.IsCancellationRequested && State == ConnectionState.Connected)
             {
                 SetState(ConnectionState.Disconnected, "GVRET device closed the connection");
             }
@@ -331,7 +334,8 @@ public sealed class GvretConnection : CanConnectionBase
         }
         catch (Exception ex) when (ex is IOException or ObjectDisposedException or InvalidOperationException)
         {
-            if (!cancellationToken.IsCancellationRequested)
+            if (!cancellationToken.IsCancellationRequested &&
+                State is ConnectionState.Connected or ConnectionState.Connecting)
             {
                 SetState(ConnectionState.Error, ex.Message);
             }

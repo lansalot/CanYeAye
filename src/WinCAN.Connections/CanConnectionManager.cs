@@ -11,6 +11,8 @@ public sealed class CanConnectionManager : IAsyncDisposable
 {
     private readonly Lock _lock = new();
     private readonly List<Entry> _entries = [];
+    private readonly Dictionary<ICanConnection, EventHandler<CanFrame>> _frameHandlers = [];
+    private readonly Dictionary<ICanConnection, EventHandler> _busHandlers = [];
     private int _nextBus;
 
     public event EventHandler<CanFrame>? FrameReceived;
@@ -39,29 +41,53 @@ public sealed class CanConnectionManager : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(connection);
 
         Entry entry;
+        EventHandler<CanFrame> frameHandler;
+        EventHandler busHandler;
         lock (_lock)
         {
-            if (_entries.Any(e => ReferenceEquals(e.Connection, connection)))
+            var existing = _entries.FirstOrDefault(e => ReferenceEquals(e.Connection, connection));
+            if (existing is not null)
             {
-                return _entries.First(e => ReferenceEquals(e.Connection, connection));
+                return existing;
             }
 
-            var busCount = Math.Max(1, connection.Buses.Count);
-            entry = new Entry(connection, _nextBus, busCount);
-            _nextBus += busCount;
+            entry = new Entry(connection, _nextBus, Math.Max(1, connection.Buses.Count));
+            _nextBus = entry.LastBus + 1;
             _entries.Add(entry);
+
+            frameHandler = new EventHandler<CanFrame>((_, frame) => Publish(connection, frame));
+            _frameHandlers[connection] = frameHandler;
+
+            busHandler = new EventHandler((_, _) => OnBusesChanged(connection));
+            _busHandlers[connection] = busHandler;
         }
 
-        connection.FrameReceived += (_, frame) => Publish(entry, frame);
+        connection.FrameReceived += frameHandler;
+        connection.BusesChanged += busHandler;
+
         ConnectionsChanged?.Invoke(this, EventArgs.Empty);
         return entry;
     }
 
     public void Detach(ICanConnection connection)
     {
+        EventHandler<CanFrame>? frameHandler;
+        EventHandler? busHandler;
         lock (_lock)
         {
             _entries.RemoveAll(e => ReferenceEquals(e.Connection, connection));
+            _frameHandlers.Remove(connection, out frameHandler);
+            _busHandlers.Remove(connection, out busHandler);
+        }
+
+        if (frameHandler is not null)
+        {
+            connection.FrameReceived -= frameHandler;
+        }
+
+        if (busHandler is not null)
+        {
+            connection.BusesChanged -= busHandler;
         }
 
         ConnectionsChanged?.Invoke(this, EventArgs.Empty);
@@ -106,6 +132,9 @@ public sealed class CanConnectionManager : IAsyncDisposable
         {
             entries = _entries.ToArray();
             _entries.Clear();
+            _frameHandlers.Clear();
+            _busHandlers.Clear();
+            _nextBus = 0;
         }
 
         foreach (var entry in entries)
@@ -125,8 +154,42 @@ public sealed class CanConnectionManager : IAsyncDisposable
         ConnectionsChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private void Publish(Entry entry, CanFrame frame)
+    private void OnBusesChanged(ICanConnection connection)
     {
+        lock (_lock)
+        {
+            var next = 0;
+            for (var i = 0; i < _entries.Count; i++)
+            {
+                var entry = _entries[i];
+                var count = Math.Max(1, entry.Connection.Buses.Count);
+                if (entry.FirstBus != next || entry.BusCount != count)
+                {
+                    _entries[i] = new Entry(entry.Connection, next, count);
+                }
+
+                next += count;
+            }
+
+            _nextBus = next;
+        }
+
+        ConnectionsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void Publish(ICanConnection connection, CanFrame frame)
+    {
+        Entry? entry;
+        lock (_lock)
+        {
+            entry = _entries.FirstOrDefault(e => ReferenceEquals(e.Connection, connection));
+        }
+
+        if (entry is null)
+        {
+            return;
+        }
+
         var global = frame.Clone();
         global.Bus = (byte)(entry.FirstBus + frame.Bus);
         FrameReceived?.Invoke(this, global);
