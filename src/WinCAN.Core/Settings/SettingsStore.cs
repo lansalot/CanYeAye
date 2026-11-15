@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace WinCAN.Core.Settings;
 
+/// <summary>Saved geometry and visibility of one frame-grid column.</summary>
+public sealed record ColumnLayout(string Header, double Width, string Unit, int DisplayIndex, bool Visible);
+
 /// <summary>
 /// WinCAN's own settings store. Deliberately independent of SavvyCAN's QSettings
 /// registry keys (see AGENTS.md): same file formats, separate preferences.
@@ -30,6 +33,26 @@ public sealed record AppSettings
     public int WindowWidth { get; init; } = 1280;
 
     public int WindowHeight { get; init; } = 800;
+
+    public int WindowX { get; init; } = int.MinValue;
+
+    public int WindowY { get; init; } = int.MinValue;
+
+    public bool ShowLog { get; init; }
+
+    public bool AutoScrollWindow { get; init; } = true;
+
+    public bool OverwriteMode { get; init; }
+
+    public bool InterpretFrames { get; init; }
+
+    public bool KeepFiltersWhenClearing { get; init; }
+
+    public bool RowsExpanded { get; init; }
+
+    public List<string> DbcFiles { get; init; } = [];
+
+    public List<ColumnLayout> Columns { get; init; } = [];
 }
 
 public sealed class SettingsStore

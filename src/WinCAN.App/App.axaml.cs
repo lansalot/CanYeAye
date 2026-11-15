@@ -18,10 +18,10 @@ public partial class App : Application
             var window = new MainWindow();
             desktop.MainWindow = window;
 
-            if (desktop.Args is { Length: > 0 } args && File.Exists(args[0]))
+            var files = desktop.Args?.Where(File.Exists).ToArray() ?? [];
+            if (files.Length > 0)
             {
-                var path = args[0];
-                window.Opened += (_, _) => window.OpenLogFile(path);
+                window.Opened += (_, _) => window.OpenFiles(files);
             }
         }
 

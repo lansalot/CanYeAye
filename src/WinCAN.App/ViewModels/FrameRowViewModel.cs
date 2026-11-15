@@ -28,6 +28,12 @@ public partial class FrameRowViewModel : ObservableObject
     [ObservableProperty]
     private string _interpretation = string.Empty;
 
+    partial void OnInterpretationChanged(string value) => OnPropertyChanged(nameof(HasInterpretation));
+
+    public bool HasInterpretation => Interpretation.Length > 0;
+
+    public string Ascii => ToAscii(Frame.Payload);
+
     public string Time => Frame.Timestamp.ToString();
 
     public string Bus => Frame.Bus.ToString();
@@ -91,4 +97,20 @@ public partial class FrameRowViewModel : ObservableObject
     public string Detail =>
         $"{Frame.Timestamp}  {Type}  {Id}  [{Length}]  {Data}  bus {Bus}" +
         (string.IsNullOrEmpty(Flags) ? string.Empty : $"  {Flags}");
+
+    private static string ToAscii(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        return string.Create(payload.Length, payload.ToArray(), static (span, bytes) =>
+        {
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                span[i] = bytes[i] is >= 0x20 and < 0x7F ? (char)bytes[i] : '.';
+            }
+        });
+    }
 }

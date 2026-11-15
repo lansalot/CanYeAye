@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using WinCAN.App.Services;
@@ -12,8 +13,10 @@ public partial class MainWindow : Window
     private readonly MainWindowViewModel _viewModel;
     private readonly SettingsStore _settingsStore = new();
     private readonly AppSettings _settings;
+    private readonly bool _hasRestorePosition;
     private Views.SendFrameWindow? _sendFrameWindow;
     private Views.DbcManagerWindow? _dbcManagerWindow;
+    private Views.FrameFilterWindow? _frameFilterWindow;
     private Views.ProgressWindow? _progressWindow;
 
     public MainWindow()
@@ -28,6 +31,12 @@ public partial class MainWindow : Window
         _settings = _settingsStore.Load();
         Width = Math.Max(900, _settings.WindowWidth);
         Height = Math.Max(560, _settings.WindowHeight);
+        _hasRestorePosition = _settings.WindowX != int.MinValue && _settings.WindowY != int.MinValue;
+        if (_hasRestorePosition)
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual;
+        }
+
         _viewModel.SerialPort = _settings.LastSerialPort ?? _viewModel.SerialPort;
         _viewModel.BaudRate = _settings.LastBaudRate;
         _viewModel.Host = _settings.SocketCandHost ?? _viewModel.Host;
@@ -38,11 +47,29 @@ public partial class MainWindow : Window
             _viewModel.SelectedConnectionType = connectionType;
         }
 
+        foreach (var dbcPath in _settings.DbcFiles.Where(File.Exists))
+        {
+            _viewModel.LoadDbcFile(dbcPath);
+        }
+
         DataContext = _viewModel;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.ScrollToEndRequested += OnScrollToEndRequested;
         _viewModel.RowExpansionChanged += OnRowExpansionChanged;
+
+        _viewModel.ShowLog = _settings.ShowLog;
+        _viewModel.AutoScrollWindow = _settings.AutoScrollWindow;
+        _viewModel.OverwriteMode = _settings.OverwriteMode;
+        _viewModel.InterpretFrames = _settings.InterpretFrames;
+        _viewModel.KeepFiltersWhenClearing = _settings.KeepFiltersWhenClearing;
+        ApplyColumnLayout(_settings);
+        FrameGrid.RowHeight = _settings.RowsExpanded ? double.NaN : 24;
         ApplyLogVisibility();
+
+        if (_hasRestorePosition)
+        {
+            Opened += OnOpenedRestorePosition;
+        }
 
         Closed += async (_, _) =>
         {
@@ -54,31 +81,76 @@ public partial class MainWindow : Window
             {
                 // best effort on shutdown
             }
-
-            try
-            {
-                _settingsStore.Save(_settings with
-                {
-                    WindowWidth = (int)Width,
-                    WindowHeight = (int)Height,
-                    LastConnectionType = _viewModel.SelectedConnectionType,
-                    LastSerialPort = _viewModel.SerialPort,
-                    LastBaudRate = _viewModel.BaudRate,
-                    SocketCandHost = _viewModel.Host,
-                    SocketCandPort = _viewModel.Port,
-                });
-            }
-            catch
-            {
-                // never block shutdown on settings I/O
-            }
         };
+
+        Closing += (_, _) => SaveSettings();
+    }
+
+    private void SaveSettings()
+    {
+        try
+        {
+            _settingsStore.Save(_settings with
+            {
+                WindowWidth = (int)Width,
+                WindowHeight = (int)Height,
+                WindowX = Position.X,
+                WindowY = Position.Y,
+                ShowLog = _viewModel.ShowLog,
+                AutoScrollWindow = _viewModel.AutoScrollWindow,
+                OverwriteMode = _viewModel.OverwriteMode,
+                InterpretFrames = _viewModel.InterpretFrames,
+                KeepFiltersWhenClearing = _viewModel.KeepFiltersWhenClearing,
+                RowsExpanded = double.IsNaN(FrameGrid.RowHeight),
+                Columns = CaptureColumns(),
+                DbcFiles = _viewModel.Dbc.LoadedFiles
+                    .Select(file => file.FilePath)
+                    .Where(path => !string.IsNullOrEmpty(path))
+                    .ToList(),
+                LastConnectionType = _viewModel.SelectedConnectionType,
+                LastSerialPort = _viewModel.SerialPort,
+                LastBaudRate = _viewModel.BaudRate,
+                SocketCandHost = _viewModel.Host,
+                SocketCandPort = _viewModel.Port,
+            });
+        }
+        catch
+        {
+            // never block shutdown on settings I/O
+        }
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e) => Close();
 
-    /// <summary>Loads a log passed on the command line.</summary>
-    public void OpenLogFile(string path) => _ = _viewModel.LoadLogFileAsync(path);
+    private void OnOpenedRestorePosition(object? sender, EventArgs e)
+    {
+        var x = _settings.WindowX;
+        var y = _settings.WindowY;
+        var screen = Screens.ScreenFromPoint(new PixelPoint(x, y)) ?? Screens.Primary;
+        if (screen is not null)
+        {
+            x = Math.Clamp(x, screen.WorkingArea.X - 50, screen.WorkingArea.X + screen.WorkingArea.Width - 100);
+            y = Math.Clamp(y, screen.WorkingArea.Y - 20, screen.WorkingArea.Y + screen.WorkingArea.Height - 100);
+        }
+
+        Position = new PixelPoint(x, y);
+    }
+
+    /// <summary>Loads logs/DBC files passed on the command line.</summary>
+    public void OpenFiles(IReadOnlyList<string> paths)
+    {
+        foreach (var path in paths)
+        {
+            if (path.EndsWith(".dbc", StringComparison.OrdinalIgnoreCase))
+            {
+                _viewModel.LoadDbcFile(path);
+            }
+            else
+            {
+                _ = _viewModel.LoadLogFileAsync(path);
+            }
+        }
+    }
 
     private async void OnConnectionClick(object? sender, RoutedEventArgs e)
     {
@@ -97,6 +169,19 @@ public partial class MainWindow : Window
         _sendFrameWindow = new Views.SendFrameWindow(_viewModel);
         _sendFrameWindow.Closed += (_, _) => _sendFrameWindow = null;
         _sendFrameWindow.Show(this);
+    }
+
+    private void OnFrameFilterClick(object? sender, RoutedEventArgs e)
+    {
+        if (_frameFilterWindow is { IsVisible: true })
+        {
+            _frameFilterWindow.Activate();
+            return;
+        }
+
+        _frameFilterWindow = new Views.FrameFilterWindow(_viewModel);
+        _frameFilterWindow.Closed += (_, _) => _frameFilterWindow = null;
+        _frameFilterWindow.Show(this);
     }
 
     private void OnDbcManagerClick(object? sender, RoutedEventArgs e)
@@ -153,8 +238,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var column = FrameGrid.Columns.FirstOrDefault(c =>
-            string.Equals(c.Header as string, header, StringComparison.Ordinal));
+        var column = FindColumn(header);
         if (column is not null)
         {
             column.IsVisible = item.IsChecked;
@@ -168,16 +252,7 @@ public partial class MainWindow : Window
             column.IsVisible = true;
         }
 
-        if (FrameGrid.ContextMenu is { } menu)
-        {
-            foreach (var item in menu.Items.OfType<MenuItem>())
-            {
-                if (item.Tag is string)
-                {
-                    item.IsChecked = true;
-                }
-            }
-        }
+        SyncColumnMenu();
     }
 
     private void OnScrollToEndRequested(object? sender, EventArgs e)
@@ -206,35 +281,107 @@ public partial class MainWindow : Window
             case nameof(MainWindowViewModel.OverwriteMode):
                 SetColumnVisibility("Count", _viewModel.OverwriteMode);
                 break;
-            case nameof(MainWindowViewModel.InterpretFrames):
-                SetColumnVisibility("Interpretation", _viewModel.InterpretFrames);
-                break;
             case nameof(MainWindowViewModel.IsLoading):
                 ApplyProgressVisibility();
                 break;
         }
     }
 
+    private DataGridColumn? FindColumn(string header) =>
+        FrameGrid.Columns.FirstOrDefault(column =>
+            string.Equals(column.Header as string, header, StringComparison.Ordinal));
+
     private void SetColumnVisibility(string header, bool visible)
     {
-        var column = FrameGrid.Columns.FirstOrDefault(c =>
-            string.Equals(c.Header as string, header, StringComparison.Ordinal));
+        var column = FindColumn(header);
         if (column is not null)
         {
             column.IsVisible = visible;
         }
 
-        if (FrameGrid.ContextMenu is { } menu)
+        SyncColumnMenu();
+    }
+
+    private void SyncColumnMenu()
+    {
+        if (FrameGrid.ContextMenu is not { } menu)
         {
-            foreach (var item in menu.Items.OfType<MenuItem>())
+            return;
+        }
+
+        foreach (var item in menu.Items.OfType<MenuItem>())
+        {
+            if (item.Tag is not string header)
             {
-                if (item.Tag is string tag && string.Equals(tag, header, StringComparison.Ordinal))
-                {
-                    item.IsChecked = visible;
-                }
+                continue;
+            }
+
+            var column = FindColumn(header);
+            if (column is not null)
+            {
+                item.IsChecked = column.IsVisible;
             }
         }
     }
+
+    private void ApplyColumnLayout(AppSettings settings)
+    {
+        if (settings.Columns.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var saved in settings.Columns)
+        {
+            var column = FindColumn(saved.Header);
+            if (column is null)
+            {
+                continue;
+            }
+
+            column.IsVisible = saved.Visible;
+            if (saved.Width > 0)
+            {
+                column.Width = new DataGridLength(saved.Width, ParseUnit(saved.Unit));
+            }
+        }
+
+        var ordered = settings.Columns
+            .Where(saved => saved.Visible)
+            .OrderBy(saved => saved.DisplayIndex)
+            .Select(saved => FindColumn(saved.Header))
+            .Where(column => column is not null)
+            .ToList();
+
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            try
+            {
+                ordered[i]!.DisplayIndex = i;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // index already claimed; keep the current order
+            }
+        }
+
+        SyncColumnMenu();
+    }
+
+    private List<ColumnLayout> CaptureColumns() =>
+        FrameGrid.Columns
+            .Select(column => new ColumnLayout(
+                (column.Header as string) ?? string.Empty,
+                column.Width.Value,
+                column.Width.UnitType.ToString(),
+                column.DisplayIndex,
+                column.IsVisible))
+            .ToList();
+
+    private static DataGridLengthUnitType ParseUnit(string unit) =>
+        Enum.TryParse<DataGridLengthUnitType>(unit, ignoreCase: true, out var parsed)
+            ? parsed
+            : DataGridLengthUnitType.Pixel;
 
     private void ApplyProgressVisibility()
     {

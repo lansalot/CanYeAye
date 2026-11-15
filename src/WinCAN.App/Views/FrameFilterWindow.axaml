@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:WinCAN.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="WinCAN.App.Views.FrameFilterWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:MainWindowViewModel"
+        Width="340" Height="620"
+        MinWidth="240" MinHeight="260"
+        CanResize="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="Manual"
+        Title="WinCAN Frame Filtering">
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Padding="6" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="Dock Left" Click="OnDockLeftClick" FontSize="11" Padding="8,3" />
+        <Button Content="Dock Right" Click="OnDockRightClick" FontSize="11" Padding="8,3" />
+        <Button Content="Full Height" Click="OnFullHeightClick" FontSize="11" Padding="8,3" />
+        <Button Content="Float" Click="OnFloatClick" FontSize="11" Padding="8,3" />
+      </StackPanel>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Padding="6" BorderThickness="0,1,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <Grid ColumnDefinitions="Auto,Auto,*">
+        <Button Grid.Column="0" Content="All" Command="{Binding FilterAllCommand}" Width="80" Margin="0,0,8,0" />
+        <Button Grid.Column="1" Content="None" Command="{Binding FilterNoneCommand}" Width="80" Margin="0,0,12,0" />
+        <TextBlock Grid.Column="2" Text="{Binding FilterSummary}" VerticalAlignment="Center" FontSize="11" />
+      </Grid>
+    </Border>
+
+    <DockPanel Margin="6">
+      <TextBox DockPanel.Dock="Top" PlaceholderText="Filter IDs." Text="{Binding FilterSearch, Mode=TwoWay}"
+               Margin="0,0,0,6" />
+      <ListBox ItemsSource="{Binding FrameFilters}">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+  </DockPanel>
+</Window>

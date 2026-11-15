@@ -148,6 +148,9 @@ public partial class MainWindowViewModel : ObservableObject
     private string _filterSearch = string.Empty;
 
     [ObservableProperty]
+    private string _filterSummary = "0 / 0 IDs shown";
+
+    [ObservableProperty]
     private bool _showLog;
 
     [ObservableProperty]
@@ -457,6 +460,7 @@ public partial class MainWindowViewModel : ObservableObject
             BusFilters.Clear();
         }
 
+        UpdateFilterSummary();
         StatusText = "Frames cleared";
     }
 
@@ -555,6 +559,21 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Recomputes interpretations after the DBC list changes.</summary>
     public void OnDbcChanged() => RebuildDisplay();
+
+    /// <summary>Loads a DBC file (used by the DBC manager and command-line startup).</summary>
+    public void LoadDbcFile(string path)
+    {
+        try
+        {
+            var file = Dbc.Load(path);
+            LogBus.Info($"Loaded DBC {file.FileName} ({file.Messages.Count} messages)");
+            OnDbcChanged();
+        }
+        catch (Exception ex)
+        {
+            LogBus.Error($"{path}: {ex.Message}");
+        }
+    }
 
     private async Task PopulateLoadedAsync(IReadOnlyList<CanFrame> frames)
     {
@@ -814,7 +833,7 @@ public partial class MainWindowViewModel : ObservableObject
             return string.Empty;
         }
 
-        var parts = new List<string>();
+        var parts = new List<string> { $"<{message.Name}>" };
         foreach (var signal in message.ActiveSignals(frame))
         {
             var text = signal.ProcessAsText(frame).TrimEnd();
@@ -824,7 +843,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
         }
 
-        return string.Join("; ", parts);
+        return string.Join(Environment.NewLine, parts);
     }
 
     private void RegisterFilterEntries(CanFrame frame)
@@ -838,6 +857,8 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 FrameFilters.Add(item);
             }
+
+            UpdateFilterSummary();
         }
 
         if (!_busFilters.ContainsKey(frame.Bus))
@@ -874,6 +895,7 @@ public partial class MainWindowViewModel : ObservableObject
     private void OnIdFilterChanged(FrameFilterItem item)
     {
         _idFilters[item.Id] = item.IsChecked;
+        UpdateFilterSummary();
         if (!_suppressFilterRebuild)
         {
             RebuildDisplay();
@@ -898,12 +920,20 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         _suppressFilterRebuild = false;
+        UpdateFilterSummary();
         RebuildDisplay();
     }
 
     private bool MatchesSearch(string label) =>
         string.IsNullOrEmpty(FilterSearch) ||
         label.Contains(FilterSearch, StringComparison.OrdinalIgnoreCase);
+
+    private void UpdateFilterSummary()
+    {
+        var total = _idFilters.Count;
+        var enabled = _idFilters.Values.Count(value => value);
+        FilterSummary = $"{enabled} / {total} IDs shown";
+    }
 
     private void ApplySearchToFilterList()
     {
