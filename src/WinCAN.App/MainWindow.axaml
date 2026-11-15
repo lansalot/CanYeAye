@@ -9,6 +9,7 @@
         x:DataType="vm:MainWindowViewModel"
         Width="1280" Height="800"
         Title="WinCAN">
+  <LayoutTransformControl x:Name="RootScale">
   <DockPanel>
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
@@ -57,6 +58,10 @@
           <Button Content="Clear" Command="{Binding ClearFramesCommand}" />
           <ToggleButton Content="Log" IsChecked="{Binding ShowLog, Mode=TwoWay}" />
           <CheckBox Content="Suspend" IsChecked="{Binding CaptureSuspended}" />
+          <Separator Width="1" />
+          <Button Content="-" Click="OnZoomOutClick" Width="30" Padding="0" ToolTip.Tip="Scale down 10%" />
+          <TextBlock Text="{Binding UiScaleLabel}" VerticalAlignment="Center" Width="46" TextAlignment="Center" />
+          <Button Content="+" Click="OnZoomInClick" Width="30" Padding="0" ToolTip.Tip="Scale up 10%" />
         </StackPanel>
       </ScrollViewer>
     </Border>
@@ -163,5 +168,6 @@
       </Border>
     </Grid>
   </DockPanel>
+  </LayoutTransformControl>
 </Window>
 

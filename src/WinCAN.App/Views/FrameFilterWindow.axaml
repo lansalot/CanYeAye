@@ -13,6 +13,17 @@
         ShowInTaskbar="False"
         WindowStartupLocation="Manual"
         Title="WinCAN Frame Filtering">
+  <Window.Styles>
+    <Style Selector="ListBox#IdFilterList ListBoxItem">
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="2,0" />
+    </Style>
+    <Style Selector="ListBox#IdFilterList CheckBox">
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0" />
+    </Style>
+  </Window.Styles>
   <DockPanel>
     <Border DockPanel.Dock="Top" Padding="6" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
       <StackPanel Orientation="Horizontal" Spacing="6">
@@ -35,7 +46,7 @@
     <DockPanel Margin="6">
       <TextBox DockPanel.Dock="Top" PlaceholderText="Filter IDs." Text="{Binding FilterSearch, Mode=TwoWay}"
                Margin="0,0,0,6" />
-      <ListBox ItemsSource="{Binding FrameFilters}">
+      <ListBox x:Name="IdFilterList" ItemsSource="{Binding FrameFilters}">
         <ListBox.ItemTemplate>
           <DataTemplate>
             <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked, Mode=TwoWay}" />

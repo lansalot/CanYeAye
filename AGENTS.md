@@ -115,11 +115,13 @@ dotnet test --filter FullyQualifiedName~FileFormats
   unmodified.
 - `WinCAN.App` (Avalonia): main window with the SavvyCAN right-hand frame panel (total/FPS,
   suspend, normalize, clear, keep-filters, auto-scroll, overwrite mode with counts, interpret
-  frames, expand/collapse, bus and per-ID filtering), reorderable/hideable grid columns,
-  optional log pane and status bar. Connection dialog, non-modal send-frame window, DBC manager
-  (multi-file load/remove/reorder), log-loading progress dialog, scripting window, OBD-II poller
-  window and sniffer window. `dotnet run -- <log>` opens a log at startup. Verified with screen
-  captures, including a 324k-frame load.
+  frames, expand/collapse, bus filtering), reorderable/hideable grid columns (incl. ASCII),
+  in-row DBC interpretation, optional log pane and status bar, and 10%-step UI scaling from the
+  toolbar. Connection dialog, non-modal send-frame window, DBC manager (multi-file
+  load/remove/reorder), log-loading progress dialog, scripting window, OBD-II poller window,
+  sniffer window, and a compact dockable floating frame-filter window. Layout (position, columns,
+  toggles, scale, loaded DBCs) persists across restarts. `dotnet run -- <log> [dbc...]` opens
+  files at startup. Verified with screen captures, including a 324k-frame load.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 

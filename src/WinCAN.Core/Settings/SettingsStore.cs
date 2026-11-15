@@ -50,6 +50,8 @@ public sealed record AppSettings
 
     public bool RowsExpanded { get; init; }
 
+    public double UiScale { get; init; } = 1.0;
+
     public List<string> DbcFiles { get; init; } = [];
 
     public List<ColumnLayout> Columns { get; init; } = [];

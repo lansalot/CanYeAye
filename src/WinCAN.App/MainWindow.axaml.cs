@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using WinCAN.App.Services;
 using WinCAN.App.ViewModels;
 using WinCAN.Core.Settings;
@@ -14,6 +15,7 @@ public partial class MainWindow : Window
     private readonly SettingsStore _settingsStore = new();
     private readonly AppSettings _settings;
     private readonly bool _hasRestorePosition;
+    private double _uiScale = 1.0;
     private Views.SendFrameWindow? _sendFrameWindow;
     private Views.DbcManagerWindow? _dbcManagerWindow;
     private Views.FrameFilterWindow? _frameFilterWindow;
@@ -29,8 +31,9 @@ public partial class MainWindow : Window
         };
 
         _settings = _settingsStore.Load();
-        Width = Math.Max(900, _settings.WindowWidth);
-        Height = Math.Max(560, _settings.WindowHeight);
+        _uiScale = ClampScale(_settings.UiScale <= 0 ? 1.0 : _settings.UiScale);
+        Width = Math.Max(900, _settings.WindowWidth) * _uiScale;
+        Height = Math.Max(560, _settings.WindowHeight) * _uiScale;
         _hasRestorePosition = _settings.WindowX != int.MinValue && _settings.WindowY != int.MinValue;
         if (_hasRestorePosition)
         {
@@ -65,6 +68,7 @@ public partial class MainWindow : Window
         ApplyColumnLayout(_settings);
         FrameGrid.RowHeight = _settings.RowsExpanded ? double.NaN : 24;
         ApplyLogVisibility();
+        ApplyScaleTransform();
 
         if (_hasRestorePosition)
         {
@@ -92,10 +96,11 @@ public partial class MainWindow : Window
         {
             _settingsStore.Save(_settings with
             {
-                WindowWidth = (int)Width,
-                WindowHeight = (int)Height,
+                WindowWidth = (int)Math.Round(Width / _uiScale),
+                WindowHeight = (int)Math.Round(Height / _uiScale),
                 WindowX = Position.X,
                 WindowY = Position.Y,
+                UiScale = _uiScale,
                 ShowLog = _viewModel.ShowLog,
                 AutoScrollWindow = _viewModel.AutoScrollWindow,
                 OverwriteMode = _viewModel.OverwriteMode,
@@ -121,6 +126,34 @@ public partial class MainWindow : Window
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e) => Close();
+
+    private void OnZoomOutClick(object? sender, RoutedEventArgs e) => ApplyScale(_uiScale - 0.1);
+
+    private void OnZoomInClick(object? sender, RoutedEventArgs e) => ApplyScale(_uiScale + 0.1);
+
+    private void ApplyScale(double scale)
+    {
+        var clamped = ClampScale(scale);
+        if (Math.Abs(clamped - _uiScale) < 0.0001)
+        {
+            return;
+        }
+
+        var previous = _uiScale;
+        _uiScale = clamped;
+        Width = Math.Max(600, Width / previous * clamped);
+        Height = Math.Max(400, Height / previous * clamped);
+        ApplyScaleTransform();
+    }
+
+    private void ApplyScaleTransform()
+    {
+        RootScale.LayoutTransform = new ScaleTransform(_uiScale, _uiScale);
+        _viewModel.UiScalePercent = (int)Math.Round(_uiScale * 100);
+    }
+
+    private static double ClampScale(double scale) =>
+        Math.Clamp(Math.Round(scale * 10, MidpointRounding.AwayFromZero) / 10.0, 0.7, 2.0);
 
     private void OnOpenedRestorePosition(object? sender, EventArgs e)
     {

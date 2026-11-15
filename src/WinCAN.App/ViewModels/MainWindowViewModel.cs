@@ -154,6 +154,13 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _showLog;
 
     [ObservableProperty]
+    private int _uiScalePercent = 100;
+
+    partial void OnUiScalePercentChanged(int value) => OnPropertyChanged(nameof(UiScaleLabel));
+
+    public string UiScaleLabel => $"{UiScalePercent}%";
+
+    [ObservableProperty]
     private bool _isLoading;
 
     [ObservableProperty]
