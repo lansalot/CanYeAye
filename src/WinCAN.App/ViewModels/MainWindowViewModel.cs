@@ -373,6 +373,11 @@ public partial class MainWindowViewModel : ObservableObject
             _pending.Clear();
             Frames.Clear();
             _overwriteRows.Clear();
+
+            // A new log starts from a clean filter set: the old ID/bus filters would
+            // otherwise hide the freshly loaded frames.
+            ClearFilterState();
+
             _store.AddRange(loaded.frames);
 
             await PopulateLoadedAsync(loaded.frames);
@@ -505,17 +510,28 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (!KeepFiltersWhenClearing)
         {
-            _idFilters.Clear();
-            _busFilters.Clear();
-            _frameFilterItems.Clear();
-            _allFrameFilters.Clear();
-            _allBusFilters.Clear();
-            FrameFilters.Clear();
-            BusFilters.Clear();
+            ClearFilterState();
+        }
+        else
+        {
+            UpdateFilterSummary();
         }
 
-        UpdateFilterSummary();
         StatusText = "Frames cleared";
+    }
+
+    /// <summary>Drops every ID/bus filter and rebuilds the empty filter lists.</summary>
+    private void ClearFilterState()
+    {
+        _idFilters.Clear();
+        _busFilters.Clear();
+        _frameFilterItems.Clear();
+        _allFrameFilters.Clear();
+        _allBusFilters.Clear();
+        FrameFilters.Clear();
+        BusFilters.Clear();
+        FilterSearch = string.Empty;
+        UpdateFilterSummary();
     }
 
     [RelayCommand]

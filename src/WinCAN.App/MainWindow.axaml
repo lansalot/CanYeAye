@@ -115,6 +115,12 @@
             <MenuItem Header="Show all columns" Click="OnShowAllColumnsClick" />
           </ContextMenu>
         </DataGrid.ContextMenu>
+        <DataGrid.Styles>
+          <!-- Zebra striping; hover/selection keep the theme's own brushes. -->
+          <Style Selector="DataGridRow:nth-child(even):not(:selected):not(:pointerover)">
+            <Setter Property="Background" Value="{DynamicResource FrameRowAlternateBrush}" />
+          </Style>
+        </DataGrid.Styles>
         <DataGrid.Columns>
           <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="130" />
           <DataGridTextColumn Header="Bus" Binding="{Binding Bus}" Width="60" />
