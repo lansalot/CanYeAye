@@ -2,8 +2,127 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:vm="using:WinCAN.App.ViewModels"
+        mc:Ignorable="d"
         x:Class="WinCAN.App.MainWindow"
-        Title="WinCAN.App">
-    Welcome to Avalonia!
+        x:CompileBindings="False"
+        x:DataType="vm:MainWindowViewModel"
+        Width="1280" Height="800"
+        Title="WinCAN">
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem Header="_Open Log..." Command="{Binding OpenLogCommand}" />
+        <MenuItem Header="_Save Log..." Command="{Binding SaveLogCommand}" />
+        <Separator />
+        <MenuItem Header="E_xit" Click="OnExitClick" />
+      </MenuItem>
+      <MenuItem Header="_DBC">
+        <MenuItem Header="_Load DBC..." Command="{Binding LoadDbcCommand}" />
+      </MenuItem>
+      <MenuItem Header="_Connection">
+        <MenuItem Header="_Connect" Command="{Binding ConnectCommand}" />
+        <MenuItem Header="_Disconnect" Command="{Binding DisconnectCommand}" />
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Header="_Clear Frames" Command="{Binding ClearFramesCommand}" />
+        <MenuItem Header="_Graph Selected" Command="{Binding GraphCommand}" />
+      </MenuItem>
+    </Menu>
+
+    <Border DockPanel.Dock="Top" Padding="8" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Content="Open Log" Command="{Binding OpenLogCommand}" />
+        <Button Content="Save Log" Command="{Binding SaveLogCommand}" />
+        <Button Content="Load DBC" Command="{Binding LoadDbcCommand}" />
+        <Separator Width="1" />
+        <Button Content="Connect" Command="{Binding ConnectCommand}" />
+        <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+        <Separator Width="1" />
+        <Button Content="Clear" Command="{Binding ClearFramesCommand}" />
+        <Button Content="Graph" Command="{Binding GraphCommand}" />
+        <CheckBox Content="Suspend" IsChecked="{Binding CaptureSuspended}" />
+        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Margin="16,0,0,0" />
+      </StackPanel>
+    </Border>
+
+    <Grid ColumnDefinitions="320,*">
+      <ScrollViewer Grid.Column="0">
+        <StackPanel Margin="8" Spacing="8">
+          <TextBlock Text="Connection" FontWeight="Bold" />
+          <ComboBox ItemsSource="{Binding ConnectionTypes}" SelectedItem="{Binding SelectedConnectionType}" />
+          <TextBlock Text="{Binding ConnectionDetail}" TextWrapping="Wrap" FontSize="11" />
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" >
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Serial port" />
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SerialPort}" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Baud rate" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding BaudRate}" />
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Host" />
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Host}" />
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Port" />
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Port}" />
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Bitrate" />
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Bitrate}" />
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="Bus names" />
+            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding BusNames}" />
+            <TextBlock Grid.Row="6" Grid.Column="0" Text="MQTT topic" />
+            <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding BaseTopic}" />
+            <TextBlock Grid.Row="7" Grid.Column="0" Text="Buses" />
+            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding BusSummary}" TextWrapping="Wrap" FontSize="11" />
+          </Grid>
+
+          <Separator />
+          <TextBlock Text="Send Frame" FontWeight="Bold" />
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Bus" />
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SendBus}" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="ID (hex)" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SendId}" />
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Data (hex)" />
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SendData}" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <CheckBox Content="Extended" IsChecked="{Binding SendExtended}" />
+            <CheckBox Content="CAN FD" IsChecked="{Binding SendFd}" />
+          </StackPanel>
+          <Button Content="Send" Command="{Binding SendFrameCommand}" HorizontalAlignment="Left" Width="100" />
+
+          <Separator />
+          <TextBlock Text="DBC files" FontWeight="Bold" />
+          <ItemsControl ItemsSource="{Binding DbcFiles}" />
+
+          <Separator />
+          <TextBlock Text="Signals (selected frame)" FontWeight="Bold" />
+          <DataGrid ItemsSource="{Binding Signals}" AutoGenerateColumns="True" IsReadOnly="True"
+                    MaxHeight="260" HeadersVisibility="Column" />
+        </StackPanel>
+      </ScrollViewer>
+
+      <Grid Grid.Column="1" RowDefinitions="*,4,180">
+        <DataGrid Grid.Row="0" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame}"
+                  AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal" CanUserReorderColumns="True" CanUserResizeColumns="True">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="130" />
+            <DataGridTextColumn Header="Bus" Binding="{Binding Bus}" Width="50" />
+            <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="80" />
+            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="100" />
+            <DataGridTextColumn Header="Len" Binding="{Binding Length}" Width="50" />
+            <DataGridTextColumn Header="Data" Binding="{Binding Data}" Width="*" />
+            <DataGridTextColumn Header="Flags" Binding="{Binding Flags}" Width="110" />
+          </DataGrid.Columns>
+        </DataGrid>
+        <GridSplitter Grid.Row="1" ResizeDirection="Rows" HorizontalAlignment="Stretch" />
+        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+          <ListBox ItemsSource="{Binding LogLines}" FontFamily="Consolas,Courier New,monospace" FontSize="11">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Border>
+      </Grid>
+    </Grid>
+  </DockPanel>
 </Window>
