@@ -132,7 +132,7 @@
           <DataGridTemplateColumn Header="Data" Width="*">
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
-                <StackPanel>
+                <StackPanel VerticalAlignment="Center">
                   <TextBlock Text="{Binding Data}" FontFamily="Consolas,Courier New,monospace" />
                   <TextBlock Text="{Binding Interpretation}" IsVisible="{Binding HasInterpretation}"
                              TextWrapping="Wrap" FontFamily="Consolas,Courier New,monospace" Opacity="0.9" />
