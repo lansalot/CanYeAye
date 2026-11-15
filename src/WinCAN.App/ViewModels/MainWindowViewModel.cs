@@ -83,6 +83,12 @@ public partial class MainWindowViewModel : ObservableObject
         "MQTT",
     ];
 
+    public IReadOnlyList<string> SaveFormatNames { get; } =
+        LogFormatRegistry.SaveFilters.Select(f => f.Name).ToList();
+
+    [ObservableProperty]
+    private string _selectedSaveFormat = LogFormatRegistry.SaveFilters[0].Name;
+
     [ObservableProperty]
     private string _selectedConnectionType = "GVRET (serial)";
 
@@ -218,7 +224,10 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var path = await FileDialogs.PickSaveLogAsync(_selectedLogPath ?? "capture.csv");
+        var formatIndex = Math.Max(0, SaveFormatNames.ToList().IndexOf(SelectedSaveFormat));
+        var extension = LogFormatRegistry.SaveFilters[formatIndex].Format?.DefaultExtension ?? ".csv";
+        var suggested = Path.GetFileNameWithoutExtension(_selectedLogPath ?? "capture") + extension;
+        var path = await FileDialogs.PickSaveLogAsync(suggested);
         if (string.IsNullOrEmpty(path))
         {
             return;
@@ -227,7 +236,7 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             var frames = _store.Snapshot();
-            var ok = await Task.Run(() => LogFormatRegistry.Save(path, 0, frames));
+            var ok = await Task.Run(() => LogFormatRegistry.Save(path, formatIndex, frames));
             StatusText = ok ? $"Saved {frames.Count} frames to {Path.GetFileName(path)}" : "Save failed";
             if (ok)
             {

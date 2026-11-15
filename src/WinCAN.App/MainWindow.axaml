@@ -31,9 +31,11 @@
     </Menu>
 
     <Border DockPanel.Dock="Top" Padding="8" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
         <Button Content="Open Log" Command="{Binding OpenLogCommand}" />
         <Button Content="Save Log" Command="{Binding SaveLogCommand}" />
+        <ComboBox ItemsSource="{Binding SaveFormatNames}" SelectedItem="{Binding SelectedSaveFormat}" Width="180" />
         <Button Content="Load DBC" Command="{Binding LoadDbcCommand}" />
         <Separator Width="1" />
         <Button Content="Connect" Command="{Binding ConnectCommand}" />
@@ -46,7 +48,8 @@
         <Button Content="Sniffer" Click="OnSnifferClick" />
         <CheckBox Content="Suspend" IsChecked="{Binding CaptureSuspended}" />
         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Margin="16,0,0,0" />
-      </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
     </Border>
 
     <Grid ColumnDefinitions="320,*">
