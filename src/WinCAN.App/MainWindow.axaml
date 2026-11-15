@@ -9,7 +9,7 @@
         x:DataType="vm:MainWindowViewModel"
         Width="1280" Height="800"
         Title="WinCAN">
-  <Panel x:Name="ScaleHost" ClipToBounds="True">
+  <Canvas x:Name="ScaleHost" ClipToBounds="True">
   <DockPanel x:Name="RootContent">
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
@@ -153,6 +153,7 @@
         </DataGrid.Columns>
       </DataGrid>
   </DockPanel>
-  </Panel>
+  </Canvas>
 </Window>
+
 
