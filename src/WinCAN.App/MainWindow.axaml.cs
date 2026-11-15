@@ -60,14 +60,13 @@ public partial class MainWindow : Window
         _viewModel.ScrollToEndRequested += OnScrollToEndRequested;
         _viewModel.RowExpansionChanged += OnRowExpansionChanged;
 
-        _viewModel.ShowLog = _settings.ShowLog;
         _viewModel.AutoScrollWindow = _settings.AutoScrollWindow;
         _viewModel.OverwriteMode = _settings.OverwriteMode;
         _viewModel.InterpretFrames = _settings.InterpretFrames;
         _viewModel.KeepFiltersWhenClearing = _settings.KeepFiltersWhenClearing;
         ApplyColumnLayout(_settings);
         FrameGrid.RowHeight = _settings.RowsExpanded ? double.NaN : 24;
-        ApplyLogVisibility();
+        ScaleHost.SizeChanged += OnScaleHostSizeChanged;
         ApplyScaleTransform();
 
         if (_hasRestorePosition)
@@ -101,7 +100,6 @@ public partial class MainWindow : Window
                 WindowX = Position.X,
                 WindowY = Position.Y,
                 UiScale = _uiScale,
-                ShowLog = _viewModel.ShowLog,
                 AutoScrollWindow = _viewModel.AutoScrollWindow,
                 OverwriteMode = _viewModel.OverwriteMode,
                 InterpretFrames = _viewModel.InterpretFrames,
@@ -148,9 +146,19 @@ public partial class MainWindow : Window
 
     private void ApplyScaleTransform()
     {
-        RootScale.LayoutTransform = new ScaleTransform(_uiScale, _uiScale);
         _viewModel.UiScalePercent = (int)Math.Round(_uiScale * 100);
+        if (ScaleHost.Bounds.Width <= 0 || ScaleHost.Bounds.Height <= 0)
+        {
+            return;
+        }
+
+        RootContent.RenderTransform = new ScaleTransform(_uiScale, _uiScale);
+        RootContent.RenderTransformOrigin = RelativePoint.TopLeft;
+        RootContent.Width = ScaleHost.Bounds.Width / _uiScale;
+        RootContent.Height = ScaleHost.Bounds.Height / _uiScale;
     }
+
+    private void OnScaleHostSizeChanged(object? sender, SizeChangedEventArgs e) => ApplyScaleTransform();
 
     private static double ClampScale(double scale) =>
         Math.Clamp(Math.Round(scale * 10, MidpointRounding.AwayFromZero) / 10.0, 0.7, 2.0);
@@ -308,9 +316,6 @@ public partial class MainWindow : Window
     {
         switch (e.PropertyName)
         {
-            case nameof(MainWindowViewModel.ShowLog):
-                ApplyLogVisibility();
-                break;
             case nameof(MainWindowViewModel.OverwriteMode):
                 SetColumnVisibility("Count", _viewModel.OverwriteMode);
                 break;
@@ -434,15 +439,5 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ApplyLogVisibility()
-    {
-        if (FrameArea.RowDefinitions.Count < 3)
-        {
-            return;
-        }
-
-        var visible = _viewModel.ShowLog;
-        FrameArea.RowDefinitions[1].Height = new GridLength(visible ? 4 : 0);
-        FrameArea.RowDefinitions[2].Height = new GridLength(visible ? 180 : 0);
-    }
 }
+

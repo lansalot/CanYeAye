@@ -9,8 +9,8 @@
         x:DataType="vm:MainWindowViewModel"
         Width="1280" Height="800"
         Title="WinCAN">
-  <LayoutTransformControl x:Name="RootScale">
-  <DockPanel>
+  <Panel x:Name="ScaleHost" ClipToBounds="True">
+  <DockPanel x:Name="RootContent">
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
         <MenuItem Header="_Open Log..." Command="{Binding OpenLogCommand}" />
@@ -28,7 +28,6 @@
         <MenuItem Header="_Disconnect" Command="{Binding DisconnectCommand}" />
       </MenuItem>
       <MenuItem Header="_View">
-        <MenuItem Header="Show _Log" ToggleType="CheckBox" IsChecked="{Binding ShowLog, Mode=TwoWay}" />
         <Separator />
         <MenuItem Header="_Clear Frames" Command="{Binding ClearFramesCommand}" />
         <MenuItem Header="_Graph Selected" Command="{Binding GraphCommand}" />
@@ -56,7 +55,6 @@
           <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
           <Separator Width="1" />
           <Button Content="Clear" Command="{Binding ClearFramesCommand}" />
-          <ToggleButton Content="Log" IsChecked="{Binding ShowLog, Mode=TwoWay}" />
           <CheckBox Content="Suspend" IsChecked="{Binding CaptureSuspended}" />
           <Separator Width="1" />
           <Button Content="-" Click="OnZoomOutClick" Width="30" Padding="0" ToolTip.Tip="Scale down 10%" />
@@ -113,8 +111,7 @@
       </ScrollViewer>
     </Border>
 
-    <Grid x:Name="FrameArea" RowDefinitions="*,4,180">
-      <DataGrid x:Name="FrameGrid" Grid.Row="0" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame}"
+    <DataGrid x:Name="FrameGrid" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame}"
                 AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
                 GridLinesVisibility="Horizontal" CanUserReorderColumns="True" CanUserResizeColumns="True"
                 CanUserSortColumns="False">
@@ -155,19 +152,7 @@
           <DataGridTextColumn Header="Flags" Binding="{Binding Flags}" Width="110" />
         </DataGrid.Columns>
       </DataGrid>
-      <GridSplitter Grid.Row="1" ResizeDirection="Rows" HorizontalAlignment="Stretch" IsVisible="{Binding ShowLog}" />
-      <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-              IsVisible="{Binding ShowLog}">
-        <ListBox ItemsSource="{Binding LogLines}" FontFamily="Consolas,Courier New,monospace" FontSize="11">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding}" />
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </Border>
-    </Grid>
   </DockPanel>
-  </LayoutTransformControl>
+  </Panel>
 </Window>
 

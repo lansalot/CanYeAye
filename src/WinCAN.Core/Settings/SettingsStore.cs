@@ -38,8 +38,6 @@ public sealed record AppSettings
 
     public int WindowY { get; init; } = int.MinValue;
 
-    public bool ShowLog { get; init; }
-
     public bool AutoScrollWindow { get; init; } = true;
 
     public bool OverwriteMode { get; init; }

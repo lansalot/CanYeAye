@@ -29,6 +29,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly DispatcherTimer _statsTimer;
     private readonly Dictionary<uint, bool> _idFilters = [];
     private readonly Dictionary<byte, bool> _busFilters = [];
+    private readonly Dictionary<uint, FrameFilterItem> _frameFilterItems = [];
     private readonly List<FrameFilterItem> _allFrameFilters = [];
     private readonly List<BusFilterItem> _allBusFilters = [];
     private readonly Dictionary<(byte Bus, uint Id), FrameRowViewModel> _overwriteRows = [];
@@ -54,9 +55,6 @@ public partial class MainWindowViewModel : ObservableObject
         ConnectionManager.ConnectionsChanged += (_, _) =>
             Dispatcher.UIThread.Post(() => OnPropertyChanged(nameof(BusSummary)));
 
-        LogBus.EntryAdded += (_, entry) =>
-            Dispatcher.UIThread.Post(() => AddLogLine(entry.ToString()));
-
         _flushTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
         _flushTimer.Tick += (_, _) => FlushPendingFrames();
         _flushTimer.Start();
@@ -68,8 +66,6 @@ public partial class MainWindowViewModel : ObservableObject
             TotalFramesCaptured = _store.Count;
         };
         _statsTimer.Start();
-
-        AddLogLine("WinCAN ready.");
     }
 
     public CanConnectionManager ConnectionManager { get; } = new();
@@ -85,8 +81,6 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<FrameFilterItem> FrameFilters { get; } = [];
 
     public ObservableCollection<BusFilterItem> BusFilters { get; } = [];
-
-    public ObservableCollection<string> LogLines { get; } = [];
 
     /// <summary>Raised when the view should scroll to the newest frame (auto-scroll).</summary>
     public event EventHandler? ScrollToEndRequested;
@@ -149,9 +143,6 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _filterSummary = "0 / 0 IDs shown";
-
-    [ObservableProperty]
-    private bool _showLog;
 
     [ObservableProperty]
     private int _uiScalePercent = 100;
@@ -232,7 +223,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     partial void OnOverwriteModeChanged(bool value) => RebuildDisplay();
 
-    partial void OnInterpretFramesChanged(bool value) => RebuildDisplay();
+    partial void OnInterpretFramesChanged(bool value)
+    {
+        RefreshFilterLabels();
+        RebuildDisplay();
+    }
 
     partial void OnFilterSearchChanged(string value)
     {
@@ -242,9 +237,6 @@ public partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void ToggleCapture() => CaptureSuspended = !CaptureSuspended;
-
-    [RelayCommand]
-    private void ToggleLog() => ShowLog = !ShowLog;
 
     [RelayCommand]
     private void NormalizeTiming()
@@ -461,6 +453,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             _idFilters.Clear();
             _busFilters.Clear();
+            _frameFilterItems.Clear();
             _allFrameFilters.Clear();
             _allBusFilters.Clear();
             FrameFilters.Clear();
@@ -555,17 +548,12 @@ public partial class MainWindowViewModel : ObservableObject
         new Views.GraphWindow(title, points).Show();
     }
 
-    public void AddLogLine(string text)
-    {
-        LogLines.Add(text);
-        if (LogLines.Count > 5000)
-        {
-            LogLines.RemoveAt(0);
-        }
-    }
-
     /// <summary>Recomputes interpretations after the DBC list changes.</summary>
-    public void OnDbcChanged() => RebuildDisplay();
+    public void OnDbcChanged()
+    {
+        RefreshFilterLabels();
+        RebuildDisplay();
+    }
 
     /// <summary>Loads a DBC file (used by the DBC manager and command-line startup).</summary>
     public void LoadDbcFile(string path)
@@ -858,7 +846,12 @@ public partial class MainWindowViewModel : ObservableObject
         if (!_idFilters.ContainsKey(frame.FrameId))
         {
             _idFilters[frame.FrameId] = true;
-            var item = new FrameFilterItem(frame.FrameId, frame.IsExtended, OnIdFilterChanged);
+            var item = new FrameFilterItem(
+                frame.FrameId,
+                frame.IsExtended,
+                BuildFilterLabel(frame.FrameId, frame.IsExtended),
+                OnIdFilterChanged);
+            _frameFilterItems[frame.FrameId] = item;
             _allFrameFilters.Add(item);
             if (MatchesSearch(item.Label))
             {
@@ -890,8 +883,8 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         if (!string.IsNullOrEmpty(FilterSearch) &&
-            !frame.FrameId.ToString("X", CultureInfo.InvariantCulture)
-                .Contains(FilterSearch, StringComparison.OrdinalIgnoreCase))
+            (!_frameFilterItems.TryGetValue(frame.FrameId, out var item) ||
+             !item.Label.Contains(FilterSearch, StringComparison.OrdinalIgnoreCase)))
         {
             return false;
         }
@@ -934,6 +927,31 @@ public partial class MainWindowViewModel : ObservableObject
     private bool MatchesSearch(string label) =>
         string.IsNullOrEmpty(FilterSearch) ||
         label.Contains(FilterSearch, StringComparison.OrdinalIgnoreCase);
+
+    private string BuildFilterLabel(uint id, bool extended)
+    {
+        var label = "0x" + CanIdParser.FormatId(id, extended);
+        if (InterpretFrames)
+        {
+            var message = Dbc.FindMessage(id);
+            if (message is not null)
+            {
+                label += " " + message.Name;
+            }
+        }
+
+        return label;
+    }
+
+    private void RefreshFilterLabels()
+    {
+        foreach (var item in _allFrameFilters)
+        {
+            item.Label = BuildFilterLabel(item.Id, item.Extended);
+        }
+
+        ApplySearchToFilterList();
+    }
 
     private void UpdateFilterSummary()
     {
@@ -998,4 +1016,6 @@ public partial class MainWindowViewModel : ObservableObject
         return result;
     }
 }
+
+
 

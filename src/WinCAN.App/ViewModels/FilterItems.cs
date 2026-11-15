@@ -8,11 +8,11 @@ public partial class FrameFilterItem : ObservableObject
 {
     private readonly Action<FrameFilterItem> _changed;
 
-    public FrameFilterItem(uint id, bool extended, Action<FrameFilterItem> changed)
+    public FrameFilterItem(uint id, bool extended, string label, Action<FrameFilterItem> changed)
     {
         Id = id;
         Extended = extended;
-        Label = CanIdParser.FormatId(id, extended);
+        Label = label;
         _changed = changed;
     }
 
@@ -20,7 +20,8 @@ public partial class FrameFilterItem : ObservableObject
 
     public bool Extended { get; }
 
-    public string Label { get; }
+    [ObservableProperty]
+    private string _label;
 
     [ObservableProperty]
     private bool _isChecked = true;
