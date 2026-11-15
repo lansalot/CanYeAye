@@ -42,6 +42,8 @@
         <Button Content="Clear" Command="{Binding ClearFramesCommand}" />
         <Button Content="Graph" Command="{Binding GraphCommand}" />
         <Button Content="Scripting" Click="OnScriptingClick" />
+        <Button Content="OBD-II" Click="OnObd2Click" />
+        <Button Content="Sniffer" Click="OnSnifferClick" />
         <CheckBox Content="Suspend" IsChecked="{Binding CaptureSuspended}" />
         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Margin="16,0,0,0" />
       </StackPanel>

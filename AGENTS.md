@@ -108,9 +108,13 @@ dotnet test --filter FullyQualifiedName~FileFormats
   Validated against SavvyCAN's `examples/*.dbc` and the 17 real files in `DBCsamples`
   (copied to `tests/WinCAN.Tests/Fixtures/DbcSamples`).
 - `WinCAN.Core.Protocols`: ISO-TP transport (`IsoTpHandler`, single/multi-frame, flow control,
-  segmented TX) and UDS (`UdsHandler`). `WinCAN.Core.Scripting.ScriptHost` runs SavvyCAN `.js`
-  files on Jint with the `host`/`can`/`isotp`/`uds` globals and positional callbacks; all four
-  `examples/*.js` run unmodified.
+  segmented TX), UDS (`UdsHandler`) and OBD-II (full Mode 01 PID table, `Obd2Dbc` generator,
+  `Obd2Poller`). `WinCAN.Core.Scripting.ScriptHost` runs SavvyCAN `.js` files on Jint with the
+  `host`/`can`/`isotp`/`uds` globals and positional callbacks; all four `examples/*.js` run
+  unmodified.
+- `WinCAN.App` (Avalonia): main window (connection panel, frame grid, log, DBC signals,
+  ScottPlot graph), scripting window, OBD-II poller window and sniffer window. The app launches
+  and renders; verified with screen captures.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 
