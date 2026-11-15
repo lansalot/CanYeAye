@@ -201,6 +201,36 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private uint _bitrate = 500_000;
 
+    /// <summary>Valid CAN bus speeds offered by the connection dialog (re/connectionwindow.cpp).</summary>
+    public ObservableCollection<uint> BusSpeeds { get; } =
+    [
+        33_333,
+        50_000,
+        83_333,
+        100_000,
+        125_000,
+        250_000,
+        500_000,
+        1_000_000,
+    ];
+
+    /// <summary>Adds a saved speed that is not in the standard list (SavvyCAN does the same).</summary>
+    public void EnsureBusSpeed(uint speed)
+    {
+        if (speed == 0 || BusSpeeds.Contains(speed))
+        {
+            return;
+        }
+
+        var index = 0;
+        while (index < BusSpeeds.Count && BusSpeeds[index] < speed)
+        {
+            index++;
+        }
+
+        BusSpeeds.Insert(index, speed);
+    }
+
     [ObservableProperty]
     private string _busNames = "can0";
 

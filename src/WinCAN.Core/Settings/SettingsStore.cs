@@ -22,6 +22,8 @@ public sealed record AppSettings
 
     public int LastBaudRate { get; init; } = 115200;
 
+    public uint LastBusSpeed { get; init; } = 500_000;
+
     public string? SocketCandHost { get; init; }
 
     public int SocketCandPort { get; init; } = 29536;

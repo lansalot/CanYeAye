@@ -43,6 +43,8 @@ public partial class MainWindow : Window
 
         _viewModel.SerialPort = _settings.LastSerialPort ?? _viewModel.SerialPort;
         _viewModel.BaudRate = _settings.LastBaudRate;
+        _viewModel.Bitrate = _settings.LastBusSpeed == 0 ? 500_000 : _settings.LastBusSpeed;
+        _viewModel.EnsureBusSpeed(_viewModel.Bitrate);
         _viewModel.Host = _settings.SocketCandHost ?? _viewModel.Host;
         _viewModel.SocketCandPort = _settings.SocketCandPort;
         _viewModel.GvretTcpPort = _settings.GvretTcpPort;
@@ -118,6 +120,7 @@ public partial class MainWindow : Window
                 LastConnectionType = _viewModel.SelectedConnectionType,
                 LastSerialPort = _viewModel.SerialPort,
                 LastBaudRate = _viewModel.BaudRate,
+                LastBusSpeed = _viewModel.Bitrate,
                 SocketCandHost = _viewModel.Host,
                 SocketCandPort = _viewModel.SocketCandPort,
                 GvretTcpPort = _viewModel.GvretTcpPort,

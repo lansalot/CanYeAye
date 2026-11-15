@@ -63,7 +63,7 @@
       <TextBlock Text="Serial Port Speed:" />
       <TextBox Text="{Binding BaudRate}" />
       <TextBlock Text="CAN Bus Speed:" />
-      <TextBox Text="{Binding Bitrate}" />
+      <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
     </StackPanel>
 
     <!-- Network GVRET -->
@@ -73,7 +73,7 @@
       <TextBlock Text="TCP Port:" />
       <TextBox Text="{Binding GvretTcpPort}" />
       <TextBlock Text="CAN Bus Speed:" />
-      <TextBox Text="{Binding Bitrate}" />
+      <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
     </StackPanel>
 
     <!-- Lawicel -->
@@ -83,7 +83,7 @@
       <TextBlock Text="Serial Port Speed:" />
       <TextBox Text="{Binding BaudRate}" />
       <TextBlock Text="CAN Bus Speed:" />
-      <TextBox Text="{Binding Bitrate}" />
+      <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
     </StackPanel>
 
     <!-- QT SerialBus (not implemented) -->
