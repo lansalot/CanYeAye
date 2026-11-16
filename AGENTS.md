@@ -88,17 +88,20 @@ dotnet test --filter FullyQualifiedName~FileFormats
 
 ## CI / releases
 
-`.github/workflows/build.yml` runs on PRs and pushes to `main`:
+`.github/workflows/build.yml` runs **only when a tag matching `v*` is pushed** — branch pushes
+and pull requests build nothing. Cut a release by tagging the commit and pushing the tag:
+
+```powershell
+git tag v0.1.3
+git push origin v0.1.3
+```
 
 - **build-test** (windows-latest, .NET 10.0.404): restore (NuGet cache), Release build and
-  `dotnet test` (277 tests).
-- **publish** (only on `main`, or a manual run on `main`): self-contained
-  `win-x64` (zip) and `linux-x64` (tar.gz) artifacts, one runner per RID.
-- **release** (only on `main`): creates a GitHub Release tagged `v0.1.<run_number>` with the
-  generated notes and both packages. The version also flows into the published assemblies.
-
-Run the workflow manually from the Actions tab to cut a release from `main`. PRs only build
-and test.
+  `dotnet test` (298 tests).
+- **publish**: self-contained `win-x64` (zip) and `linux-x64` (tar.gz) artifacts, one runner
+  per RID. The tag (without the leading `v`) becomes the assembly/package version.
+- **release**: creates the GitHub Release for the pushed tag with the generated notes and both
+  packages.
 
 ## Progress so far
 

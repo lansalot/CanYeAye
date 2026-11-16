@@ -93,10 +93,16 @@ SavvyCAN's QSettings registry keys.
 
 ## CI and releases
 
-`.github/workflows/build.yml` builds and tests every pull request and push to `main`. On
-`main` it also publishes self-contained **win-x64** (zip) and **linux-x64** (tar.gz) packages
-and creates a GitHub Release tagged `v0.1.<run_number>` with the generated notes. A manual
-run from the Actions tab on `main` cuts a release too.
+`.github/workflows/build.yml` runs **only when a tag matching `v*` is pushed** — branch pushes
+and pull requests do not build. Pushing a tag builds and tests the commit, publishes
+self-contained **win-x64** (zip) and **linux-x64** (tar.gz) packages and creates the GitHub
+Release for that tag with the generated notes. The tag without its leading `v` is used as the
+assembly/package version:
+
+```powershell
+git tag v0.1.3
+git push origin v0.1.3
+```
 
 ## Compatibility and attribution
 
