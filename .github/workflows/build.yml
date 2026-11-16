@@ -88,6 +88,8 @@ jobs:
             os: windows-latest
           - rid: linux-x64
             os: ubuntu-latest
+          - rid: osx-arm64
+            os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +114,7 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Publish
+        if: runner.os != 'macOS'
         run: >
           dotnet publish src/WinCAN.App/WinCAN.App.csproj
           --configuration ${{ env.CONFIGURATION }}
@@ -136,6 +139,13 @@ jobs:
           mkdir -p dist
           tar -czf "dist/wincan-${{ matrix.rid }}.tar.gz" -C "$staging" "wincan-${{ matrix.rid }}"
           rm -rf "$staging"
+
+      - name: Publish and package (macOS .app)
+        if: runner.os == 'macOS'
+        run: |
+          bash build/macos/package-app.sh "${{ steps.version.outputs.version }}" "${{ matrix.rid }}"
+          mkdir -p dist
+          cp "artifacts/macos/wincan-${{ matrix.rid }}.zip" dist/
 
       - name: Upload package
         uses: actions/upload-artifact@v4

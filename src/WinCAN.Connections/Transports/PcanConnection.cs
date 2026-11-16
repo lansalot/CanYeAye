@@ -42,6 +42,12 @@ public sealed class PcanConnection : CanConnectionBase
 
     public static string GetHardwareName(int channel) => PcanNative.GetHardwareName(channel);
 
+    /// <summary>True when this platform's PCAN-Basic library (PCANBasic.dll / libPCBUSB.dylib / libpcanbasic.so) loads.</summary>
+    public static bool IsDriverAvailable() => PcanNative.IsDriverAvailable();
+
+    /// <summary>Name of the driver library this platform needs, for user-facing messages.</summary>
+    public static string DriverLibraryName => PcanNative.DriverLibraryName;
+
     public override async Task ConnectAsync(CancellationToken cancellationToken = default)
     {
         if (State is ConnectionState.Connected or ConnectionState.Connecting)
@@ -65,7 +71,7 @@ public sealed class PcanConnection : CanConnectionBase
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException)
         {
-            var message = "PCAN driver not installed (PCANBasic.dll)";
+            var message = $"PCAN driver not installed ({PcanNative.DriverLibraryName})";
             SetState(ConnectionState.Error, message);
             throw new InvalidOperationException(message, ex);
         }

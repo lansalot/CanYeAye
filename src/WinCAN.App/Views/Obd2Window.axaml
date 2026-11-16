@@ -42,7 +42,7 @@
 
       <Grid Grid.Row="1" RowDefinitions="Auto,*">
         <TextBlock Grid.Row="0" Text="Vehicle information" FontWeight="Bold" Margin="8,4" />
-        <ListBox Grid.Row="1" ItemsSource="{Binding VehicleInfo}" FontFamily="Consolas,Courier New,monospace" />
+        <ListBox Grid.Row="1" ItemsSource="{Binding VehicleInfo}" FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" />
       </Grid>
     </Grid>
   </DockPanel>

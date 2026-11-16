@@ -35,6 +35,7 @@ src/WinCAN.Core          frame model, timestamps, filters, file I/O, DBC, script
 src/WinCAN.Connections   transport abstraction + GVRET, Lawicel, socketcand, MQTT, PCAN, Vector
 src/WinCAN.App           Avalonia UI, MVVM (CommunityToolkit.Mvvm)
 tests/WinCAN.Tests       xUnit: parser round-trips, protocol framing, DBC, filter logic
+build/macos              package-app.sh: osx publish -> WinCAN.app bundle + zip
 ```
 
 Update this section if the layout changes during scaffolding.
@@ -103,9 +104,10 @@ git push origin v0.1.3
   unmerged branches or side commits never reach the build; merge into `main` first, then
   move/re-push the tag.
 - **build-test** (windows-latest, .NET 10.0.404): restore (NuGet cache), Release build and
-  `dotnet test` (311 tests). Needs `tag-on-main`.
-- **publish**: self-contained `win-x64` (zip) and `linux-x64` (tar.gz) artifacts, one runner
-  per RID. The tag (without the leading `v`) becomes the assembly/package version.
+  `dotnet test` (314 tests). Needs `tag-on-main`.
+- **publish**: self-contained `win-x64` (zip), `linux-x64` (tar.gz) and `osx-arm64`
+  (`WinCAN.app` bundle, ad-hoc signed, zipped by `build/macos/package-app.sh`) artifacts, one
+  runner per RID. The tag (without the leading `v`) becomes the assembly/package version.
 - **release**: creates the GitHub Release for the pushed tag with the generated notes and both
   packages.
 
@@ -195,6 +197,12 @@ fails the gate produces no build, package or release.
   broadcast bar, hover details and top talkers (`Name (0xNN): frames`), drag, wheel/pinch zoom,
   pan, long-press/double-click node naming. Node positions, zoom/pan and window geometry
   persist. Design notes: `docs/research/j1939-node-analysis.md`.
+- macOS (Apple silicon) support: builds, tests and runs natively. On macOS the main window's
+  XAML `Menu` is mirrored into the global menu bar by `Services/NativeMenuBridge` (clicks are
+  forwarded to the original `MenuItem`, so Command/Click wiring stays in one place; Exit maps
+  to the app menu's Quit) and shortcuts use Cmd (`NativeMenuBridge.SetShortcut`). PCAN uses a
+  `DllImportResolver` in `PcanNative` that maps `PCANBasic.dll` to MacCAN's `libPCBUSB.dylib`
+  (macOS) or `libpcanbasic.so` (Linux) - same PCAN-Basic C API. Vector XL has no macOS driver.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 

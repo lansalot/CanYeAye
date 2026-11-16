@@ -59,7 +59,7 @@
     <!-- Serial GVRET -->
     <StackPanel IsVisible="{Binding IsGvretSerial}" Spacing="4">
       <TextBlock Text="Serial Port:" />
-      <TextBox Text="{Binding SerialPort}" />
+      <TextBox Text="{Binding SerialPort}" PlaceholderText="COM3 / /dev/cu.usbmodem…" />
       <TextBlock Text="Serial Port Speed:" />
       <TextBox Text="{Binding BaudRate}" />
       <TextBlock Text="CAN Bus Speed:" />
@@ -79,7 +79,7 @@
     <!-- Lawicel -->
     <StackPanel IsVisible="{Binding IsLawicel}" Spacing="4">
       <TextBlock Text="Serial Port:" />
-      <TextBox Text="{Binding SerialPort}" />
+      <TextBox Text="{Binding SerialPort}" PlaceholderText="COM3 / /dev/cu.usbmodem…" />
       <TextBlock Text="Serial Port Speed:" />
       <TextBox Text="{Binding BaudRate}" />
       <TextBlock Text="CAN Bus Speed:" />

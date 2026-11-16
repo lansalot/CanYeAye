@@ -87,7 +87,7 @@
                             IsChecked="{Binding IsChecked, Mode=TwoWay}"
                             ToolTip.Tip="Check/uncheck every ID of this node on the Frame IDs tab." />
                   <TextBlock Grid.Column="1" Text="{Binding AddressText}" VerticalAlignment="Center"
-                             FontFamily="Consolas,Courier New,monospace" />
+                             FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" />
                   <TextBox Grid.Column="2" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="Name" FontSize="12"
                            IsVisible="{Binding IsEditable}" />
                   <TextBlock Grid.Column="2" Text="" VerticalAlignment="Center"
