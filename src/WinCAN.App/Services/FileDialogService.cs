@@ -35,6 +35,11 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
         Patterns = ["*.txt", "*.TXT", "*.nodes", "*.NODES"],
     };
 
+    private static readonly FilePickerFileType TextFiles = new("Text files")
+    {
+        Patterns = ["*.txt", "*.TXT"],
+    };
+
     public async Task<string?> PickOpenLogAsync()
     {
         var storage = topLevel()?.StorageProvider;
@@ -175,6 +180,25 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
             SuggestedFileName = suggestedName,
             DefaultExtension = "txt",
             FileTypeChoices = [NodeNameFiles, AllFiles],
+        });
+
+        return file?.TryGetLocalPath();
+    }
+
+    public async Task<string?> PickSaveTextAsync(string suggestedName)
+    {
+        var storage = topLevel()?.StorageProvider;
+        if (storage is null)
+        {
+            return null;
+        }
+
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save frame details",
+            SuggestedFileName = suggestedName,
+            DefaultExtension = "txt",
+            FileTypeChoices = [TextFiles, AllFiles],
         });
 
         return file?.TryGetLocalPath();

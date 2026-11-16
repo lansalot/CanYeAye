@@ -47,6 +47,11 @@ a cansniffer-style analysis view and an interactive J1939 node graph.
   edge thickness proportional to traffic, a broadcast bar, top talkers, hover details, drag
   to rearrange, wheel/pinch zoom and pan, and long-press/double-click node naming. Works from
   live traffic or a one-off snapshot of the loaded capture.
+- **Detailed Frame Information** (Tools → Detailed Frame Information…): a one-off snapshot of
+  the loaded capture for one ID: per-byte ranges, changed-bit masks, value histograms and
+  per-byte graphs, a bit-change heatmap, bit and inter-frame-interval histograms, J1939/GMLAN
+  decoding and DBC signal value counts, savable as tab-indented text. The window never follows
+  live traffic; reopen it to refresh.
 - ISO-TP, UDS and OBD-II tools, including a live OBD-II poller.
 
 ### Scripting
@@ -68,6 +73,11 @@ talkers.*
 
 *Flow View: full-width payload bits with red/green change flashes, per-byte graph, reference,
 seek and trigger controls.*
+
+![Detailed Frame Information window](docs/images/frame-info.png)
+
+*Detailed Frame Information: per-byte heatmap and value graphs, bit histogram, interval
+histogram, J1939/GMLAN decoding and DBC signal histograms for one ID of a frozen capture.*
 
 ![New Connection dialog](docs/images/connection-dialog.png)
 

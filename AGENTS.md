@@ -166,6 +166,15 @@ git push origin v0.1.3
   changes. The byte graph is a custom windowed control with a range slider, per-byte `Graph?`
   toggle and an eight-colour palette. Geometry persists; design notes:
   `docs/research/flow-view.md`.
+- Detailed Frame Information (parity with `re/frameinfowindow`): `WinCAN.Core.Analysis`
+  `FrameInfoAnalyzer` builds a snapshot report for one ID (per-byte range/`ChangedBits`/value
+  histogram/series, 64-bit set counts and change rates, seconds-aware interval statistics with
+  a 20-bin histogram, DBC signal value histograms, J1939/GMLAN decoding, and a detail-node tree
+  shared with the tab-indented text export). `FrameInfoWindowViewModel` snapshots the capture
+  when the window opens - it never follows live traffic - and drives custom-drawn heatmap, bit
+  and interval histograms and eight per-byte value graphs. ID list, detail tree, save-all-
+  details, last-window geometry and Tools → Detailed Frame Information… wiring are in place;
+  13 analyzer tests. Design notes: `docs/research/frame-info.md`.
 - J1939 node analysis (WinCAN original, no SavvyCAN equivalent): `WinCAN.Core.Analysis`
   (`J1939NodeNames` with load/save file and settings persistence, `NodeTraffic` per source /
   conversation / broadcast). The Frame Filtering window keeps the per-ID list on its
@@ -186,6 +195,8 @@ git push origin v0.1.3
   tracks touch pointers manually).
 - Optional Flow View follow-ups: hover readout on the byte graph, remembering the last selected
   ID and playback options across restarts, and validating seek/ref input inline.
+- Optional Frame Info follow-ups: chart zoom/pan, remembering the last selected ID, and a
+  per-ID DBC signal drill-down.
 - Optional graph follow-ups: time-window filtering for live traffic, PNG export, per-conversation
   hover readout, node-size legend.
 

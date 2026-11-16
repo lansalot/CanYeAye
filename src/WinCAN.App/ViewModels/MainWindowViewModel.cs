@@ -151,6 +151,14 @@ public partial class MainWindowViewModel : ObservableObject
 
     public int FlowWindowY { get; set; } = int.MinValue;
 
+    public double FrameInfoWindowWidth { get; set; } = 1280;
+
+    public double FrameInfoWindowHeight { get; set; } = 860;
+
+    public int FrameInfoWindowX { get; set; } = int.MinValue;
+
+    public int FrameInfoWindowY { get; set; } = int.MinValue;
+
     /// <summary>Raised when the view should scroll to the newest frame (auto-scroll).</summary>
     public event EventHandler? ScrollToEndRequested;
 
