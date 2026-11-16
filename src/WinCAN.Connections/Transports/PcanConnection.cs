@@ -171,6 +171,11 @@ public sealed class PcanConnection : CanConnectionBase
                     continue;
                 }
 
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 SetState(ConnectionState.Error, PcanNative.Describe(status));
                 return;
             }
