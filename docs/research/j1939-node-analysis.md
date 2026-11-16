@@ -19,7 +19,8 @@ PS for PDU1, `IsBroadcast` for PDU2).
       (`IsThreeState`); the Broadcast row covers every broadcast destination (PDU2 or PDU1 to
       `0xFF`) so all broadcast traffic can be hidden in one click,
     - `All` / `None` for the whole node list,
-    - `Load...` / `Save...` for a standalone node-names file.
+    - `Load...` / `Save...` for a standalone node-names file, and `Reset` to remove every
+      label.
 - Names are also stored in WinCAN settings (`AppSettings.NodeNames`) so they survive restarts
   without an explicit file.
 - J1939 frame-filter labels append the source name: `0x18FEF101 [Steering module]`.

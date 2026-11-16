@@ -455,11 +455,30 @@ public sealed class NodeGraphControl : Control
                 continue;
             }
 
-            var angle = -Math.PI / 2 + 2 * Math.PI * i / Math.Max(1, nodes.Count);
-            var position = new Point(center.X + radius * Math.Cos(angle), center.Y + radius * Math.Sin(angle));
-            _positions[node.Address] = position;
-            node.X = position.X;
-            node.Y = position.Y;
+            // New nodes take the free spot on the circle that is farthest from the
+            // nodes already placed, so later arrivals never land on an existing node.
+            var best = default(Point);
+            var bestDistance = -1.0;
+            const int slots = 24;
+            for (var slot = 0; slot < slots; slot++)
+            {
+                var angle = -Math.PI / 2 + 2 * Math.PI * slot / slots;
+                var candidate = new Point(
+                    center.X + radius * Math.Cos(angle),
+                    center.Y + radius * Math.Sin(angle));
+                var nearest = _positions.Count == 0
+                    ? double.MaxValue
+                    : _positions.Values.Min(position => Distance(position, candidate));
+                if (nearest > bestDistance)
+                {
+                    bestDistance = nearest;
+                    best = candidate;
+                }
+            }
+
+            _positions[node.Address] = best;
+            node.X = best.X;
+            node.Y = best.Y;
             node.HasPosition = true;
         }
 

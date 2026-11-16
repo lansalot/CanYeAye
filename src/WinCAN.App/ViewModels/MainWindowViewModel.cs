@@ -1085,7 +1085,7 @@ public partial class MainWindowViewModel : ObservableObject
             _allFrameFilters.Add(item);
             if (MatchesSearch(item.Label))
             {
-                FrameFilters.Add(item);
+                InsertFrameFilterSorted(item);
             }
 
             UpdateFilterSummary();
@@ -1281,6 +1281,20 @@ public partial class MainWindowViewModel : ObservableObject
         NodeNameItems.Insert(index, item);
     }
 
+    [RelayCommand]
+    private void ResetNodeNames()
+    {
+        if (NodeNames.Count == 0)
+        {
+            return;
+        }
+
+        NodeNames.Clear();
+        SyncNodeNameItems();
+        RefreshFilterLabels();
+        StatusText = "Node names cleared";
+    }
+
     private void OnNodeNameChanged(int address, string? name)
     {
         NodeNames.SetName(address, name);
@@ -1447,13 +1461,25 @@ public partial class MainWindowViewModel : ObservableObject
     private void ApplySearchToFilterList()
     {
         FrameFilters.Clear();
-        foreach (var item in _allFrameFilters)
+        foreach (var item in _allFrameFilters.OrderBy(filter => filter.Id))
         {
             if (MatchesSearch(item.Label))
             {
                 FrameFilters.Add(item);
             }
         }
+    }
+
+    /// <summary>Keeps the visible ID list sorted by numeric frame ID.</summary>
+    private void InsertFrameFilterSorted(FrameFilterItem item)
+    {
+        var index = 0;
+        while (index < FrameFilters.Count && FrameFilters[index].Id < item.Id)
+        {
+            index++;
+        }
+
+        FrameFilters.Insert(index, item);
     }
 
     private async Task ShowMessageAsync(string title, string message)
