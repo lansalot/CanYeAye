@@ -1,0 +1,145 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CanYeAye.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="CanYeAye.App.Views.ConnectionWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:MainWindowViewModel"
+        Width="500"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="New Connection">
+  <Window.Styles>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem">
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="4,4" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList Ellipse">
+      <Setter Property="Fill" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem:selected Ellipse">
+      <Setter Property="Fill" Value="#0078D7" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem:selected:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox#ConnectionTypeList ListBoxItem:selected TextBlock">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </Window.Styles>
+
+  <StackPanel Margin="16" Spacing="10">
+    <Border BorderBrush="#777" BorderThickness="1" Padding="8">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Connection Type" />
+        <ListBox x:Name="ConnectionTypeList"
+                 ItemsSource="{Binding ConnectionTypes}"
+                 SelectedItem="{Binding SelectedConnectionType}"
+                 Background="Transparent"
+                 BorderThickness="0">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse Width="12" Height="12" Stroke="#777" StrokeThickness="1"
+                         VerticalAlignment="Center" />
+                <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </StackPanel>
+    </Border>
+
+    <!-- Serial GVRET -->
+    <StackPanel IsVisible="{Binding IsGvretSerial}" Spacing="4">
+      <TextBlock Text="Serial Port:" />
+      <TextBox Text="{Binding SerialPort}" PlaceholderText="COM3 / /dev/cu.usbmodem…" />
+      <TextBlock Text="Serial Port Speed:" />
+      <TextBox Text="{Binding BaudRate}" />
+      <TextBlock Text="CAN Bus Speed:" />
+      <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
+    </StackPanel>
+
+    <!-- Network GVRET -->
+    <StackPanel IsVisible="{Binding IsGvretTcp}" Spacing="4">
+      <TextBlock Text="IP Address:" />
+      <TextBox Text="{Binding Host}" />
+      <TextBlock Text="TCP Port:" />
+      <TextBox Text="{Binding GvretTcpPort}" />
+      <TextBlock Text="CAN Bus Speed:" />
+      <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
+    </StackPanel>
+
+    <!-- Lawicel -->
+    <StackPanel IsVisible="{Binding IsLawicel}" Spacing="4">
+      <TextBlock Text="Serial Port:" />
+      <TextBox Text="{Binding SerialPort}" PlaceholderText="COM3 / /dev/cu.usbmodem…" />
+      <TextBlock Text="Serial Port Speed:" />
+      <TextBox Text="{Binding BaudRate}" />
+      <TextBlock Text="CAN Bus Speed:" />
+      <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
+    </StackPanel>
+
+    <!-- PEAK PCAN-USB (PCAN-Basic) -->
+    <StackPanel IsVisible="{Binding IsPcan}" Spacing="4">
+      <TextBlock Text="PCAN-USB channel (1 = USB1):" />
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+        <ComboBox ItemsSource="{Binding PcanChannels}" SelectedItem="{Binding SelectedPcanChannel}"
+                  HorizontalAlignment="Stretch" />
+        <Button Grid.Column="1" Content="Detect" Command="{Binding DetectPcanCommand}" />
+      </Grid>
+      <TextBlock Text="CAN Bus Speed:" />
+      <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
+      <TextBlock Text="{Binding PcanStatus}" TextWrapping="Wrap" FontSize="11" Opacity="0.8" />
+    </StackPanel>
+
+    <!-- socketcand -->
+    <StackPanel IsVisible="{Binding IsSocketCand}" Spacing="4">
+      <TextBlock Text="Host:" />
+      <TextBox Text="{Binding Host}" />
+      <TextBlock Text="Port:" />
+      <TextBox Text="{Binding SocketCandPort}" />
+      <TextBlock Text="Available Bus(es):" />
+      <TextBox Text="{Binding BusNames}" PlaceholderText="can0,can1" />
+    </StackPanel>
+
+    <!-- MQTT -->
+    <StackPanel IsVisible="{Binding IsMqtt}" Spacing="4">
+      <TextBlock Text="Topic Name:" />
+      <TextBox Text="{Binding BaseTopic}" />
+      <TextBlock Text="Broker Host:" />
+      <TextBox Text="{Binding Host}" />
+      <TextBlock Text="Broker Port:" />
+      <TextBox Text="{Binding MqttPort}" />
+    </StackPanel>
+
+    <!-- CANserver -->
+    <StackPanel IsVisible="{Binding IsCanServer}" Spacing="4">
+      <TextBlock Text="CANserver IP Address:" />
+      <TextBox Text="{Binding Host}" />
+    </StackPanel>
+
+    <!-- CANlogserver -->
+    <StackPanel IsVisible="{Binding IsCanLogServer}" Spacing="4">
+      <TextBlock Text="Host:" />
+      <TextBox Text="{Binding Host}" />
+      <TextBlock Text="Port:" />
+      <TextBox Text="{Binding CanLogServerPort}" />
+    </StackPanel>
+
+    <TextBlock Text="{Binding ConnectionDetail}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
+    <TextBlock Text="{Binding BusSummary}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
+
+    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+      <Button Content="Connect" Command="{Binding ConnectCommand}" IsEnabled="{Binding CanConnect}" Width="110" />
+      <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Width="110" />
+      <Button Content="Close" Click="OnCloseClick" Width="90" />
+    </StackPanel>
+  </StackPanel>
+</Window>

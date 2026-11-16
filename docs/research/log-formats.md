@@ -189,13 +189,13 @@ Only lines with length > 70 are parsed.
 - Microchip and Generic CSV detectors reject SavvyCAN's own writer output due to trailing
   separators (fix detectors; regression-tested).
 - Cabana writer emits `166.064000.0` (fix; loader tolerates it).
-- GVRET `GET_ANALOG_INPUTS` never returns to idle (fix in WinCAN).
+- GVRET `GET_ANALOG_INPUTS` never returns to idle (fix in CanYeAye).
 
-## WinCAN deviations (deliberate fixes)
+## CanYeAye deviations (deliberate fixes)
 
-Implemented deviations, each covered by a test in `tests/WinCAN.Tests/FileFormats`:
+Implemented deviations, each covered by a test in `tests/CanYeAye.Tests/FileFormats`:
 
-| Format | Reference behaviour | WinCAN behaviour | Why |
+| Format | Reference behaviour | CanYeAye behaviour | Why |
 |---|---|---|---|
 | BusMaster | ms field multiplied by 100 (100 µs units) | real milliseconds | Writer emits ms, so the reference never round-trips its own files |
 | BusMaster | ID column always loses its first two characters (assumes an `0x` prefix) | strip `0x` only when present | Real BusMaster files print bare zero-padded hex; truncation corrupts short IDs |

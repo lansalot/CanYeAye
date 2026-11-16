@@ -116,7 +116,7 @@ jobs:
       - name: Publish
         if: runner.os != 'macOS'
         run: >
-          dotnet publish src/WinCAN.App/WinCAN.App.csproj
+          dotnet publish src/CanYeAye.App/CanYeAye.App.csproj
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ matrix.rid }}
           --self-contained true
@@ -128,16 +128,16 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Compress-Archive -Path publish/* -DestinationPath dist/wincan-${{ matrix.rid }}.zip
+          Compress-Archive -Path publish/* -DestinationPath dist/canyeaye-${{ matrix.rid }}.zip
 
       - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
           staging="$(mktemp -d)"
-          mkdir -p "$staging/wincan-${{ matrix.rid }}"
-          cp -a publish/. "$staging/wincan-${{ matrix.rid }}/"
+          mkdir -p "$staging/canyeaye-${{ matrix.rid }}"
+          cp -a publish/. "$staging/canyeaye-${{ matrix.rid }}/"
           mkdir -p dist
-          tar -czf "dist/wincan-${{ matrix.rid }}.tar.gz" -C "$staging" "wincan-${{ matrix.rid }}"
+          tar -czf "dist/canyeaye-${{ matrix.rid }}.tar.gz" -C "$staging" "canyeaye-${{ matrix.rid }}"
           rm -rf "$staging"
 
       - name: Publish and package (macOS .app)
@@ -145,12 +145,12 @@ jobs:
         run: |
           bash build/macos/package-app.sh "${{ steps.version.outputs.version }}" "${{ matrix.rid }}"
           mkdir -p dist
-          cp "artifacts/macos/wincan-${{ matrix.rid }}.zip" dist/
+          cp "artifacts/macos/canyeaye-${{ matrix.rid }}.zip" dist/
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: wincan-${{ matrix.rid }}
+          name: canyeaye-${{ matrix.rid }}
           path: dist/*
           if-no-files-found: error
 
@@ -183,6 +183,6 @@ jobs:
             gh release create "$TAG" dist/*.zip dist/*.tar.gz \
               --verify-tag \
               --repo "$REPO" \
-              --title "WinCAN $TAG" \
+              --title "CanYeAye $TAG" \
               --generate-notes
           fi

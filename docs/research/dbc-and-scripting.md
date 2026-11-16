@@ -846,7 +846,7 @@ return null;
 `DBCHandler` is a process singleton; on construction it restores previously loaded files from
 settings keys `DBC/FileCount`, `DBC/Filename_<i>`, `DBC/AssocBus_<i>`,
 `DBC/MatchingCriteria_<i>`, `DBC/FilterLabeling_<i>`, creating the `matchingcriteria` and
-`filterlabeling` attributes when absent. **WinCAN must use its own settings store** (AGENTS.md
+`filterlabeling` attributes when absent. **CanYeAye must use its own settings store** (AGENTS.md
 forbids touching SavvyCAN keys).
 
 Load/save dialogs offer `DBC File (*.dbc)` (index 0), `Tesla JSON File (*.json)` (1) and
@@ -879,7 +879,7 @@ then split on `,`:
 
 # 10. Known-lossy edges and port decisions
 
-| # | Reference behaviour | Decision for WinCAN |
+| # | Reference behaviour | Decision for CanYeAye |
 |---|---|---|
 | 1 | factor/bias/min/max saved with `QString::number(double)` (g6) | Keep g6 output for byte-identical round trips. Additionally store the original literal text (`FactorText`, `BiasText`, `MinText`, `MaxText`) on load and reuse it while the field is unmodified, so `1/3` or long decimals survive. Tests that compare against SavvyCAN output must accept `abs(a-b) <= abs(a)*1e-6`. |
 | 2 | `[#\w]` class truncates `BA_` / `BA_DEF_DEF_` values at `.`, `-`, `e` | Parse the full token up to `;` for FLOAT/INT attributes; keep the truncating behaviour only if a fixture proves it matters. |
@@ -980,7 +980,7 @@ untyped JS values pass through.
 | `host.addParameter(name)` | `void addParameter(QJSValue)` | `scriptParams.append(name.toString())`; the parameter table then polls the global of that name |
 | `host.updateParameter(name, value)` | `void updateParameter(QString, QString)` | sets the **global** property `name` to a **string** `value` (used by the UI when the user edits a cell; scripts may call it too) |
 | `host.compileScript()` | `void compileScript()` | recompiles the container from `scriptText` (public slot, reachable from JS) |
-| `host.updateValuesTable(widget)` | `void updateValuesTable(QTableWidget*)` | UI plumbing; not usable from JS. Skip in WinCAN or expose as a no-op. |
+| `host.updateValuesTable(widget)` | `void updateValuesTable(QTableWidget*)` | UI plumbing; not usable from JS. Skip in CanYeAye or expose as a no-op. |
 | `host.fileName`, `host.filePath`, `host.scriptText` | public fields | readable **and writable** from JS |
 
 Logging is a signal (`sendLog(QString)`) connected by `setScriptWindow()`; the log list is shared
@@ -1063,7 +1063,7 @@ gotUDSMessage(bus, id, service, subFunc, len, data)
   the service (0 when absent). `subFuncLen` is **not** exposed.
 
 Delivery is asynchronous: the connection manager invokes `gotTargettedFrame` with
-`Qt::QueuedConnection`, so callbacks run on the main thread from the event loop. In WinCAN:
+`Qt::QueuedConnection`, so callbacks run on the main thread from the event loop. In CanYeAye:
 dispatch through the UI dispatcher (Avalonia) or a queued synchronization context, never from
 the receive thread.
 
@@ -1086,7 +1086,7 @@ return false;
   `CANConManager` handles `-1` by registering on every connection's every bus, but the helper's
   own re-check (`bus == -1 || frame.Bus == filter.Bus`) then always passes.
 * Filters registered before any connection exists are stored in the helper but never handed to a
-  connection (the manager iterates its current connections). WinCAN should keep filters in the
+  connection (the manager iterates its current connections). CanYeAye should keep filters in the
   script host and re-apply them when a connection is added.
 * Bus numbering: connections renumber frames to their local bus index before dispatch, so
   `bus` in the callback is only identical to the global bus number when a single connection is
@@ -1136,12 +1136,12 @@ Important, faithful details:
   effect until the next compile.
 * `compileScript()` does **not** stop the tick timer. After a recompile with a new script that
   never calls `setTickInterval`, the old interval keeps firing (harmless no-op when `tick` is
-  absent). WinCAN: stop the timer at the start of compile, then let the new `setup` restart it.
+  absent). CanYeAye: stop the timer at the start of compile, then let the new `setup` restart it.
 * Compile errors are reported as four log lines (header, `Line: n`, message, `Stack:`, stack) -
   keep this shape so users recognize it.
 * Deleting a script stops its timer and clears filters; pending queued deliveries must be
   discarded (the reference calls `removePostedEvents` before deleting the helpers to avoid a
-  crash). In WinCAN: unsubscribe from the frame bus first, then dispose the engine.
+  crash). In CanYeAye: unsubscribe from the frame bus first, then dispose the engine.
 * Scripts run on the UI thread; a long `tick` blocks the UI.
 * One `QJSEngine` per script, so globals are per script and never shared.
 ## 12.9 Public parameters (the "Public Variables" table)
@@ -1298,16 +1298,16 @@ and **do not** change the four argument shapes.
 
 ---
 
-# 14. WinCAN mapping notes
+# 14. CanYeAye mapping notes
 
-| SavvyCAN | WinCAN |
+| SavvyCAN | CanYeAye |
 |---|---|
-| `DBC_MESSAGE`, `DBC_SIGNAL`, `DBC_NODE`, `DBC_VAL_TABLE`, `DBC_ATTRIBUTE`, `DBC_ATTRIBUTE_VALUE`, `DBC_VAL_ENUM_ENTRY` | `WinCAN.Core.Dbc` records/classes, one file per type; keep `ID`/`extendedID`/`len`/`canFD`/`bitRateSwitch` as first-class members |
+| `DBC_MESSAGE`, `DBC_SIGNAL`, `DBC_NODE`, `DBC_VAL_TABLE`, `DBC_ATTRIBUTE`, `DBC_ATTRIBUTE_VALUE`, `DBC_VAL_ENUM_ENTRY` | `CanYeAye.Core.Dbc` records/classes, one file per type; keep `ID`/`extendedID`/`len`/`canFD`/`bitRateSwitch` as first-class members |
 | `DBCSignalHandler` / `DBCMessageHandler` (QMap) | `SortedDictionary<string, DbcSignal>(StringComparer.Ordinal)` / `SortedDictionary<uint, DbcMessage>` inside `DbcFile` |
 | `DBCFile::loadFile` / `saveFile` | `DbcFileReader` / `DbcFileWriter` (pure, no UI); faults returned as `IReadOnlyList<DbcParseFault>` instead of a message box |
-| `DBCHandler` singleton + QSettings restore | `DbcDatabase` registered in DI, backed by WinCAN's own settings store |
+| `DBCHandler` singleton + QSettings restore | `DbcDatabase` registered in DI, backed by CanYeAye's own settings store |
 | `Utility::processIntegerSignal` | `SignalCodec.ExtractBits` / `SignalCodec.InsertBits` + `DbcSignal.Decode(frame)` returning a `SignalValue { Raw, Value, IntValue, Text }` |
-| `ScriptContainer` + 3 helpers | `ScriptHost` in `WinCAN.Core.Scripting` with `FrameBus` subscription, `IJsEngine` = Jint; keep `host`, `can`, `isotp`, `uds` member names and argument orders identical |
+| `ScriptContainer` + 3 helpers | `ScriptHost` in `CanYeAye.Core.Scripting` with `FrameBus` subscription, `IJsEngine` = Jint; keep `host`, `can`, `isotp`, `uds` member names and argument orders identical |
 | `ScriptingWindow` | Avalonia view + `ScriptWorkspace` view model; same buttons/lifecycle |
 
 Cross-cutting constraints from AGENTS.md that apply here: timestamps stay `secs + usecs` (never

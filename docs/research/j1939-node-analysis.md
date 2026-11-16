@@ -1,7 +1,7 @@
-# J1939 node names and the node graph (WinCAN original)
+# J1939 node names and the node graph (CanYeAye original)
 
 SavvyCAN has no equivalent of this feature; the design is ours. It builds on the J1939
-decoder in `WinCAN.Core.Protocols.J1939Id` (source address in the low byte, destination in
+decoder in `CanYeAye.Core.Protocols.J1939Id` (source address in the low byte, destination in
 PS for PDU1, `IsBroadcast` for PDU2).
 
 ## Node names
@@ -21,7 +21,7 @@ PS for PDU1, `IsBroadcast` for PDU2).
     - `All` / `None` for the whole node list,
     - `Load...` / `Save...` for a standalone node-names file, and `Reset` to remove every
       label.
-- Names are also stored in WinCAN settings (`AppSettings.NodeNames`) so they survive restarts
+- Names are also stored in CanYeAye settings (`AppSettings.NodeNames`) so they survive restarts
   without an explicit file.
 - J1939 frame-filter labels append the source name: `0x18FEF101 [Steering module]`.
 - The main frame grid has a **`Nodes`** column showing `source → destination` with names when
@@ -33,7 +33,7 @@ PS for PDU1, `IsBroadcast` for PDU2).
 Plain text, one node per line, `#` comments, decimal or `0x` addresses:
 
 ```
-# WinCAN J1939 node names
+# CanYeAye J1939 node names
 # <address>=<name>
 0x01=Steering module
 0x02=ABS
@@ -70,18 +70,18 @@ Shows J1939 **sources as nodes** and **conversations as edges**.
 
 ## Core pieces
 
-- `WinCAN.Core.Analysis.J1939NodeNames` — name store, load/save file, `Changed` event.
-- `WinCAN.Core.Analysis.NodeTraffic` — totals per source, per ordered conversation and per
+- `CanYeAye.Core.Analysis.J1939NodeNames` — name store, load/save file, `Changed` event.
+- `CanYeAye.Core.Analysis.NodeTraffic` — totals per source, per ordered conversation and per
   source broadcast (29-bit frames only; standard frames counted as ignored).
-- `WinCAN.App.Controls.NodeGraphControl` — custom-drawn graph with wheel/pinch zoom, pan,
+- `CanYeAye.App.Controls.NodeGraphControl` — custom-drawn graph with wheel/pinch zoom, pan,
   node drag, long-press naming, hover card and layout capture/apply.
-- `WinCAN.App.ViewModels.NodeGraphViewModel` — live/capture source selection, rebuild timer,
+- `CanYeAye.App.ViewModels.NodeGraphViewModel` — live/capture source selection, rebuild timer,
   summary/top-talkers text.
-- `WinCAN.App.Views.NodeGraphWindow` / `NodeNameDialog`.
+- `CanYeAye.App.Views.NodeGraphWindow` / `NodeNameDialog`.
 
 ## Tests
 
-- `tests/WinCAN.Tests/Analysis/NodeNamesAndTrafficTests.cs` — names round-trip/parsing,
+- `tests/CanYeAye.Tests/Analysis/NodeNamesAndTrafficTests.cs` — names round-trip/parsing,
   default labels, PDU1/PDU2 broadcast classification, bidirectional aggregation.
 
 ## Open ideas / verification notes (2026-11-16)

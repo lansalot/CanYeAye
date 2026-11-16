@@ -1,0 +1,68 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CanYeAye.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="CanYeAye.App.Views.ScriptingWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:ScriptingWindowViewModel"
+        Width="1000" Height="700"
+        Title="CanYeAye Scripting">
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Padding="8" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Load..." Command="{Binding LoadScriptCommand}" />
+        <Button Content="New" Command="{Binding NewScriptCommand}" />
+        <Button Content="Delete" Command="{Binding DeleteScriptCommand}" />
+        <Separator Width="1" />
+        <Button Content="Recompile" Command="{Binding RecompileCommand}" />
+        <Button Content="Save" Command="{Binding SaveScriptCommand}" />
+        <Button Content="Save As..." Command="{Binding SaveScriptAsCommand}" />
+        <Button Content="Clear Log" Command="{Binding ClearLogCommand}" />
+      </StackPanel>
+    </Border>
+
+    <Grid ColumnDefinitions="220,*">
+      <ListBox Grid.Column="0" ItemsSource="{Binding Scripts}" SelectedItem="{Binding SelectedScript}">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Text="{Binding Name}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <Grid Grid.Column="1" RowDefinitions="*,160,200">
+        <TextBox Grid.Row="0"
+                 Text="{Binding SelectedScript.EditorText, Mode=TwoWay}"
+                 AcceptsReturn="True" AcceptsTab="True"
+                 FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace"
+                 TextWrapping="NoWrap"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+          <TextBlock Grid.Row="0" Text="Public parameters" FontWeight="Bold" Margin="4" />
+          <DataGrid Grid.Row="1" ItemsSource="{Binding SelectedScript.Parameters}"
+                    AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="220" />
+              <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+
+        <Grid Grid.Row="2" RowDefinitions="Auto,*">
+          <TextBlock Grid.Row="0" Text="Log" FontWeight="Bold" Margin="4" />
+          <ListBox Grid.Row="1" ItemsSource="{Binding SelectedScript.Logs}"
+                   FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" FontSize="11">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</Window>

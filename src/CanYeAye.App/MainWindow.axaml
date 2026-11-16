@@ -1,0 +1,166 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CanYeAye.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="CanYeAye.App.MainWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:MainWindowViewModel"
+        Width="1280" Height="800"
+        Title="CanYeAye">
+  <Canvas x:Name="ScaleHost" ClipToBounds="True">
+  <DockPanel x:Name="RootContent">
+    <Menu x:Name="MainMenu" DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem x:Name="OpenLogMenuItem" Header="_Open Log..." Command="{Binding OpenLogCommand}" />
+        <MenuItem x:Name="SaveLogMenuItem" Header="_Save Log..." Command="{Binding SaveLogCommand}" />
+        <MenuItem x:Name="SaveFormatMenu" Header="Save _Format" />
+        <Separator />
+        <MenuItem x:Name="ExitMenuItem" Header="E_xit" Click="OnExitClick" />
+      </MenuItem>
+      <MenuItem Header="_DBC">
+        <MenuItem Header="_Manage DBC Files..." Click="OnDbcManagerClick" />
+      </MenuItem>
+      <MenuItem Header="_Connection">
+        <MenuItem x:Name="ConnectionSettingsMenuItem" Header="Connection _Settings..." Click="OnConnectionClick" />
+        <Separator />
+        <MenuItem Header="_Connect" Command="{Binding ConnectCommand}" />
+        <MenuItem Header="_Disconnect" Command="{Binding DisconnectCommand}" />
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Header="Suspend _Capturing" ToggleType="CheckBox" IsChecked="{Binding CaptureSuspended, Mode=TwoWay}" />
+        <Separator />
+        <MenuItem Header="_Clear Frames" Command="{Binding ClearFramesCommand}" />
+        <MenuItem Header="Frame _Filtering..." Click="OnFrameFilterClick" />
+        <MenuItem Header="Show _All Columns" Click="OnShowAllColumnsClick" />
+        <Separator />
+        <MenuItem x:Name="ZoomInMenuItem" Header="Zoom _In" Click="OnZoomInClick" />
+        <MenuItem x:Name="ZoomOutMenuItem" Header="Zoom _Out" Click="OnZoomOutClick" />
+        <MenuItem x:Name="ZoomResetMenuItem" Header="_Reset Zoom (100%)" Click="OnZoomResetClick" />
+        <MenuItem Header="{Binding UiScaleLabel}" IsEnabled="False" />
+      </MenuItem>
+      <MenuItem Header="_Tools">
+        <MenuItem Header="Send _Frame..." Click="OnSendFrameClick" />
+        <MenuItem Header="_Scripting..." Click="OnScriptingClick" />
+        <MenuItem Header="_OBD-II..." Click="OnObd2Click" />
+        <MenuItem Header="S_niffer..." Click="OnSnifferClick" />
+        <MenuItem Header="_Node Graph..." Click="OnNodeGraphClick" />
+        <MenuItem Header="Flow _View..." Click="OnFlowViewClick" />
+        <MenuItem Header="_Detailed Frame Information..." Click="OnFrameInfoClick" />
+        <Separator />
+        <MenuItem Header="About _CanYeAye..." Click="OnAboutClick" />
+      </MenuItem>
+    </Menu>
+
+    <Border DockPanel.Dock="Bottom" Padding="8,4" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <TextBlock Text="{Binding StatusText}" TextWrapping="NoWrap" />
+    </Border>
+
+    <!-- Docked frame-filtering pane (integrated into the main window; only Float uses a window). -->
+    <Border x:Name="FilterDockLeft" DockPanel.Dock="Left" IsVisible="False" Width="350"
+            BorderThickness="0,0,1,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+    <Border x:Name="FilterDockRight" DockPanel.Dock="Right" IsVisible="False" Width="350"
+            BorderThickness="1,0,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+
+    <Border DockPanel.Dock="Right" Width="250" BorderThickness="1,0,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="10" Spacing="6">
+          <TextBlock Text="Total Frames Captured:" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding TotalFramesCaptured}" HorizontalAlignment="Center" FontWeight="Bold" />
+          <TextBlock Text="Frames Per Second:" HorizontalAlignment="Center" Margin="0,6,0,0" />
+          <TextBlock Text="{Binding FramesPerSecond}" HorizontalAlignment="Center" FontWeight="Bold" />
+
+          <Button Content="{Binding CaptureButtonText}" Command="{Binding ToggleCaptureCommand}" />
+          <Button Content="Normalize Frame Timing" Command="{Binding NormalizeTimingCommand}" />
+          <Button Content="Clear Frames" Command="{Binding ClearFramesCommand}" />
+
+          <CheckBox Content="Keep Filters When Clearing" IsChecked="{Binding KeepFiltersWhenClearing, Mode=TwoWay}" />
+          <CheckBox Content="Auto Scroll Window" IsChecked="{Binding AutoScrollWindow, Mode=TwoWay}" />
+          <CheckBox Content="Overwrite Mode" IsChecked="{Binding OverwriteMode, Mode=TwoWay}" />
+          <CheckBox Content="Interpret Frames" IsChecked="{Binding InterpretFrames, Mode=TwoWay}" />
+
+          <Button Content="Expand All Rows" Command="{Binding ExpandAllCommand}" />
+          <Button Content="Collapse All Rows" Command="{Binding CollapseAllCommand}" />
+
+          <TextBlock Text="Bus Filtering:" HorizontalAlignment="Center" Margin="0,6,0,0" />
+          <ListBox ItemsSource="{Binding BusFilters}" MaxHeight="80" Background="Transparent">
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <TextBlock Text="Frame Filtering:" HorizontalAlignment="Center" Margin="0,6,0,0" />
+          <Button Content="Open Frame Filtering..." Click="OnFrameFilterClick" />
+          <TextBlock Text="{Binding FilterSummary}" HorizontalAlignment="Center" FontSize="11" Opacity="0.8" />
+          <TextBlock Text="{Binding BusSummary}" FontSize="10" TextWrapping="Wrap" Opacity="0.7" Margin="0,6,0,0" />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <DataGrid x:Name="FrameGrid" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame}"
+                AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                GridLinesVisibility="Horizontal" CanUserReorderColumns="True" CanUserResizeColumns="True"
+                CanUserSortColumns="False">
+        <DataGrid.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Show Time column" ToggleType="CheckBox" IsChecked="True" Tag="Time" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show Bus column" ToggleType="CheckBox" IsChecked="True" Tag="Bus" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show Type column" ToggleType="CheckBox" IsChecked="True" Tag="Type" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show Count column" ToggleType="CheckBox" IsChecked="False" Tag="Count" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show ID column" ToggleType="CheckBox" IsChecked="True" Tag="ID" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show Nodes column" ToggleType="CheckBox" IsChecked="True" Tag="Nodes" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show Len column" ToggleType="CheckBox" IsChecked="True" Tag="Len" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show ASCII column" ToggleType="CheckBox" IsChecked="True" Tag="ASCII" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show Data column" ToggleType="CheckBox" IsChecked="True" Tag="Data" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show Flags column" ToggleType="CheckBox" IsChecked="True" Tag="Flags" Click="OnToggleColumnClick" />
+            <Separator />
+            <MenuItem Header="Show all columns" Click="OnShowAllColumnsClick" />
+          </ContextMenu>
+        </DataGrid.ContextMenu>
+        <DataGrid.Styles>
+          <!-- Zebra striping; hover/selection keep the theme's own brushes. -->
+          <Style Selector="DataGridRow:nth-child(even):not(:selected):not(:pointerover)">
+            <Setter Property="Background" Value="{DynamicResource FrameRowAlternateBrush}" />
+          </Style>
+        </DataGrid.Styles>
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="130" />
+          <DataGridTextColumn Header="Bus" Binding="{Binding Bus}" Width="60" />
+          <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="80" />
+          <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="60" IsVisible="False" />
+          <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="100" />
+          <DataGridTextColumn Header="Nodes" Binding="{Binding NodeText}" Width="220" />
+          <DataGridTextColumn Header="Len" Binding="{Binding Length}" Width="60" />
+          <DataGridTextColumn Header="ASCII" Binding="{Binding Ascii}" Width="130" />
+          <DataGridTemplateColumn Header="Data" Width="*">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Data}" FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" />
+                  <TextBlock Text="{Binding Interpretation}" IsVisible="{Binding HasInterpretation}"
+                             TextWrapping="Wrap" FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" Opacity="0.9" />
+                </StackPanel>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Flags" Binding="{Binding Flags}" Width="110" />
+        </DataGrid.Columns>
+      </DataGrid>
+  </DockPanel>
+  </Canvas>
+</Window>
+
+
+
+
