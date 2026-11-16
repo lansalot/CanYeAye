@@ -122,10 +122,14 @@ dotnet test --filter FullyQualifiedName~FileFormats
   port 23 and the CAN bus speed is a drop-down of standard speeds, persisted in settings.
   Non-modal send-frame window, DBC manager (multi-file load/remove/reorder), log-loading
   progress dialog, scripting window, OBD-II poller window, sniffer window, and a compact
-  dockable floating frame-filter window whose labels include DBC message names when interpret
-  frames is on. Loading a new log resets the ID/bus/source filters. Layout (position, columns,
-  toggles, scale, loaded DBCs) persists across restarts. `dotnet run -- <log> [dbc...]` opens
-  files at startup. Verified with screen captures, including a 324k-frame load.
+  frame-filter pane (per-ID list plus a J1939 node-name/bulk-selection tab) that docks
+  into the main window on the left or right (the grid resizes around it) and only uses a
+  separate window in Float/Full Height mode; the last host mode is remembered. ID filter
+  labels include DBC message names when interpreting, and loading a new log resets the
+  ID/bus filters. Layout
+  (position, columns, toggles, scale, loaded DBCs) persists across restarts. `dotnet run --
+  <log> [dbc...]` opens files at startup. Verified with screen captures, including a 324k-frame
+  load.
 - Sniffer (parity with `re/sniffer`): custom-drawn grid with Delta / Frequency / ID / byte
   columns, changed-byte green/red colouring, notching (per notch interval), mute notched bits,
   byte fading, bit view, configurable expire interval and a minimum-rate (Hz) filter that hides

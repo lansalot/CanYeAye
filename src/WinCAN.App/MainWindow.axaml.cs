@@ -20,7 +20,19 @@ public partial class MainWindow : Window
     private Views.SendFrameWindow? _sendFrameWindow;
     private Views.DbcManagerWindow? _dbcManagerWindow;
     private Views.FrameFilterWindow? _frameFilterWindow;
+    private Views.FrameFilterView? _frameFilterView;
+    private FrameFilterHost _frameFilterHost = FrameFilterHost.None;
+    private FrameFilterHost _lastFrameFilterHost = FrameFilterHost.Right;
     private Views.ProgressWindow? _progressWindow;
+
+    private enum FrameFilterHost
+    {
+        None,
+        Left,
+        Right,
+        Float,
+        FullHeight,
+    }
 
     public MainWindow()
     {
@@ -76,6 +88,12 @@ public partial class MainWindow : Window
         _viewModel.NodeGraphWindowHeight = _settings.NodeGraphWindowHeight;
         _viewModel.NodeGraphWindowX = _settings.NodeGraphWindowX;
         _viewModel.NodeGraphWindowY = _settings.NodeGraphWindowY;
+
+        if (Enum.TryParse<FrameFilterHost>(_settings.FrameFilterHost, ignoreCase: true, out var savedFilterHost) &&
+            savedFilterHost != FrameFilterHost.None)
+        {
+            _lastFrameFilterHost = savedFilterHost;
+        }
 
         DataContext = _viewModel;
         BuildSaveFormatMenu();
@@ -154,6 +172,7 @@ public partial class MainWindow : Window
                 NodeGraphWindowHeight = _viewModel.NodeGraphWindowHeight,
                 NodeGraphWindowX = _viewModel.NodeGraphWindowX,
                 NodeGraphWindowY = _viewModel.NodeGraphWindowY,
+                FrameFilterHost = _lastFrameFilterHost.ToString(),
             });
         }
         catch
@@ -302,15 +321,147 @@ public partial class MainWindow : Window
 
     private void OnFrameFilterClick(object? sender, RoutedEventArgs e)
     {
-        if (_frameFilterWindow is { IsVisible: true })
+        if (_frameFilterHost != FrameFilterHost.None)
         {
-            _frameFilterWindow.Activate();
+            if (_frameFilterWindow is { IsVisible: true })
+            {
+                _frameFilterWindow.Activate();
+            }
+
             return;
         }
 
-        _frameFilterWindow = new Views.FrameFilterWindow(_viewModel);
-        _frameFilterWindow.Closed += (_, _) => _frameFilterWindow = null;
-        _frameFilterWindow.Show(this);
+        ShowFrameFilterFrame();
+    }
+
+    /// <summary>Shows the filter where it was last used (docked by default, floating only on request).</summary>
+    private void ShowFrameFilterFrame()
+    {
+        EnsureFilterView();
+        ShowFrameFilter(_lastFrameFilterHost == FrameFilterHost.None
+            ? FrameFilterHost.Right
+            : _lastFrameFilterHost);
+    }
+
+    private void EnsureFilterView()
+    {
+        if (_frameFilterView is not null)
+        {
+            return;
+        }
+
+        _frameFilterView = new Views.FrameFilterView { DataContext = _viewModel };
+        _frameFilterView.DockLeftRequested += (_, _) => ShowFrameFilter(FrameFilterHost.Left);
+        _frameFilterView.DockRightRequested += (_, _) => ShowFrameFilter(FrameFilterHost.Right);
+        _frameFilterView.FloatRequested += (_, _) => ShowFrameFilter(FrameFilterHost.Float);
+        _frameFilterView.FullHeightRequested += (_, _) => ShowFrameFilter(FrameFilterHost.FullHeight);
+        _frameFilterView.CloseRequested += (_, _) => HideFrameFilter();
+    }
+
+    private void ShowFrameFilter(FrameFilterHost host)
+    {
+        EnsureFilterView();
+        DetachFilterView();
+        if (_frameFilterView is null)
+        {
+            return;
+        }
+
+        switch (host)
+        {
+            case FrameFilterHost.Left:
+                FilterDockLeft.Child = _frameFilterView;
+                FilterDockLeft.IsVisible = true;
+                break;
+
+            case FrameFilterHost.Right:
+                FilterDockRight.Child = _frameFilterView;
+                FilterDockRight.IsVisible = true;
+                break;
+
+            case FrameFilterHost.Float:
+            case FrameFilterHost.FullHeight:
+            {
+                var window = new Views.FrameFilterWindow(_frameFilterView);
+                window.Closed += (_, _) =>
+                {
+                    window.Detach();
+                    if (ReferenceEquals(_frameFilterWindow, window))
+                    {
+                        _frameFilterWindow = null;
+                        _frameFilterHost = FrameFilterHost.None;
+                    }
+                };
+
+                if (host == FrameFilterHost.FullHeight)
+                {
+                    var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+                    if (screen is not null)
+                    {
+                        var scaling = RenderScaling <= 0 ? 1.0 : RenderScaling;
+                        window.Width = 360;
+                        window.Height = Math.Max(320, screen.WorkingArea.Height / scaling);
+                        window.Position = new PixelPoint(
+                            Math.Max(screen.WorkingArea.X + screen.WorkingArea.Width - 380, screen.WorkingArea.X),
+                            screen.WorkingArea.Y);
+                    }
+                }
+                else
+                {
+                    window.Width = 350;
+                    window.Height = 650;
+                    var scaling = RenderScaling <= 0 ? 1.0 : RenderScaling;
+                    var x = Position.X + (int)Math.Round(Bounds.Width * scaling)
+                            - (int)Math.Round(window.Width * scaling) - 40;
+                    var y = Position.Y + 60;
+                    window.Position = new PixelPoint(Math.Max(0, x), Math.Max(0, y));
+                }
+
+                _frameFilterWindow = window;
+                window.Show(this);
+                break;
+            }
+        }
+
+        _frameFilterHost = host;
+        _lastFrameFilterHost = host;
+    }
+
+    /// <summary>Removes the filter from whichever host currently owns it.</summary>
+    private void DetachFilterView()
+    {
+        if (_frameFilterView is null)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(FilterDockLeft.Child, _frameFilterView))
+        {
+            FilterDockLeft.Child = null;
+        }
+
+        if (ReferenceEquals(FilterDockRight.Child, _frameFilterView))
+        {
+            FilterDockRight.Child = null;
+        }
+
+        FilterDockLeft.IsVisible = false;
+        FilterDockRight.IsVisible = false;
+
+        var window = _frameFilterWindow;
+        _frameFilterWindow = null;
+        _frameFilterHost = FrameFilterHost.None;
+        if (window is not null)
+        {
+            window.Detach();
+            window.Close();
+        }
+    }
+
+    private void HideFrameFilter()
+    {
+        DetachFilterView();
+        _frameFilterHost = FrameFilterHost.None;
     }
 
     private void OnDbcManagerClick(object? sender, RoutedEventArgs e)

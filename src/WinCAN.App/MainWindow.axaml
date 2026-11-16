@@ -54,6 +54,14 @@
       <TextBlock Text="{Binding StatusText}" TextWrapping="NoWrap" />
     </Border>
 
+    <!-- Docked frame-filtering pane (integrated into the main window; only Float uses a window). -->
+    <Border x:Name="FilterDockLeft" DockPanel.Dock="Left" IsVisible="False" Width="350"
+            BorderThickness="0,0,1,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+    <Border x:Name="FilterDockRight" DockPanel.Dock="Right" IsVisible="False" Width="350"
+            BorderThickness="1,0,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+
     <Border DockPanel.Dock="Right" Width="250" BorderThickness="1,0,0,0"
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
       <ScrollViewer VerticalScrollBarVisibility="Auto">

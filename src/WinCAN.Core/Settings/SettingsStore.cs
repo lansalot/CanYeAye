@@ -70,6 +70,9 @@ public sealed record AppSettings
 
     public List<NodeGraphPosition> NodeGraphLayout { get; init; } = [];
 
+    /// <summary>Last frame-filter host (Left, Right, Float, FullHeight).</summary>
+    public string FrameFilterHost { get; init; } = "Right";
+
     public double NodeGraphZoom { get; init; } = 1.0;
 
     public double NodeGraphPanX { get; init; }
