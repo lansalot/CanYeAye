@@ -1,0 +1,52 @@
+
+# Default: normalise recognised text files to LF in Git
+* text=auto eol=lf
+
+# Explicitly treat common source/configuration files as text
+*.cs       text
+*.csproj   text
+*.fsproj   text
+*.vbproj   text
+*.sln      text
+*.props    text
+*.targets  text
+*.json     text
+*.xml      text
+*.yaml     text
+*.yml      text
+*.toml     text
+*.md       text
+*.txt      text
+*.ps1      text
+*.psm1     text
+*.psd1     text
+*.bicep    text
+*.sh       text eol=lf
+*.bash     text eol=lf
+*.py       text
+*.js       text
+*.ts       text
+*.html     text
+*.css      text
+*.sql      text
+
+# Windows batch scripts: CRLF in working directory
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+
+# Binary files: never perform line-ending conversion
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.pdf      binary
+*.zip      binary
+*.7z       binary
+*.dll      binary
+*.exe      binary
+*.pdb      binary
+*.bin      binary
+*.dat      binary
+*.woff     binary
+*.woff2    binary
