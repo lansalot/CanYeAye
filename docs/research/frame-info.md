@@ -5,23 +5,23 @@ Detailed Frame Information is the port of SavvyCAN's `re/frameinfowindow` (refer
 per-byte value histograms, a bit-change heatmap, a bit histogram, an interval histogram and
 eight per-byte value graphs.
 
-WinCAN keeps the reference analysis and splits it from the drawing:
+CanYeAye keeps the reference analysis and splits it from the drawing:
 
 | Piece | Location |
 |---|---|
-| Snapshot statistics, detail tree, text export | `src/WinCAN.Core/Analysis/FrameInfoAnalyzer.cs` |
-| Window view model, ID list, chart/graph models, save command | `src/WinCAN.App/ViewModels/FrameInfoWindowViewModel.cs` |
-| Bit-change heatmap (custom drawn) | `src/WinCAN.App/Controls/FrameInfoHeatmap.cs` |
-| Bit / interval histogram (custom drawn) | `src/WinCAN.App/Controls/FrameInfoBarChart.cs` |
-| Eight per-byte value graphs (custom drawn) | `src/WinCAN.App/Controls/FrameInfoByteGraphs.cs` |
-| Window layout | `src/WinCAN.App/Views/FrameInfoWindow.axaml(.cs)` |
-| Tests | `tests/WinCAN.Tests/Analysis/FrameInfoAnalyzerTests.cs` |
+| Snapshot statistics, detail tree, text export | `src/CanYeAye.Core/Analysis/FrameInfoAnalyzer.cs` |
+| Window view model, ID list, chart/graph models, save command | `src/CanYeAye.App/ViewModels/FrameInfoWindowViewModel.cs` |
+| Bit-change heatmap (custom drawn) | `src/CanYeAye.App/Controls/FrameInfoHeatmap.cs` |
+| Bit / interval histogram (custom drawn) | `src/CanYeAye.App/Controls/FrameInfoBarChart.cs` |
+| Eight per-byte value graphs (custom drawn) | `src/CanYeAye.App/Controls/FrameInfoByteGraphs.cs` |
+| Window layout | `src/CanYeAye.App/Views/FrameInfoWindow.axaml(.cs)` |
+| Tests | `tests/CanYeAye.Tests/Analysis/FrameInfoAnalyzerTests.cs` |
 
 ## Snapshot, not live
 
 The reference window re-reads the capture on every `framesUpdated` signal and even rebuilds
 the details for the selected ID (the call is commented out because it "blasts us out of the
-details"). WinCAN takes a single snapshot when the window opens and never subscribes to live
+details"). CanYeAye takes a single snapshot when the window opens and never subscribes to live
 frames: opening the window again (or closing and reopening it) is how you refresh it. The
 header line states the snapshot size, so it is obvious that the numbers are frozen.
 
@@ -80,14 +80,14 @@ tab-indented text with one blank line between IDs, exactly like the reference's
 `dumpNode` loop over `listFrameID`. The tree shown on screen and the text export share the
 same `FrameInfoDetailNode` structure, so they cannot drift apart.
 
-## WinCAN deviations
+## CanYeAye deviations
 
 - **Snapshot semantics** instead of the reference refresh signal (above).
 - **Seconds-aware intervals.** SavvyCAN subtracts only the microsecond field of its
-  timestamps, which produces nonsense when a capture crosses a second boundary. WinCAN
+  timestamps, which produces nonsense when a capture crosses a second boundary. CanYeAye
   subtracts `Seconds * 1_000_000 + Microseconds` and takes the absolute value.
 - **Single-frame IDs.** The reference reports `INT_MAX / 1000` as the minimum interval and a
-  bogus average; WinCAN reports zeroed interval statistics, no histogram and an empty-state
+  bogus average; CanYeAye reports zeroed interval statistics, no histogram and an empty-state
   message ("No inter-frame intervals (only one frame for this ID).").
 - **Real nested tree nodes.** J1939/GMLAN blocks, the value histograms and the signal value
   lists are children of their section instead of space-indented siblings, so the tree can be
@@ -95,7 +95,7 @@ same `FrameInfoDetailNode` structure, so they cannot drift apart.
 - **Compact tree.** Avalonia's default `TreeViewItem` indents 40 px per level; the window
   overrides `TreeViewItemIndent` and the chevron margin/size and drops `MinHeight` to 19 so
   the detail rows stay near the reference's density.
-- **Heatmap.** The reference paints whole cells with the change percentage; WinCAN adds the
+- **Heatmap.** The reference paints whole cells with the change percentage; CanYeAye adds the
   absolute bit number, a modern gradient, dimmed unused rows and the "no data" footer.
 - **Charts.** Custom drawn instead of QCustomPlot, with log value axes and explicit axis
   captions (`Bits`, `Interval (ms)`). Scroll-wheel zoom/pan is not implemented; the charts
@@ -104,7 +104,7 @@ same `FrameInfoDetailNode` structure, so they cannot drift apart.
   reference's 64 widgets, with a fixed 0..255 value axis rather than auto-scaling so graphs
   are comparable at a glance.
 - **Window behaviour.** One window at a time (Tools → Detailed Frame Information…
-  re-activates it); geometry is stored as `FrameInfoWindowWidth/Height/X/Y` in WinCAN's own
+  re-activates it); geometry is stored as `FrameInfoWindowWidth/Height/X/Y` in CanYeAye's own
   settings store.
 
 ## Tests

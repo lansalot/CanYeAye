@@ -5,15 +5,15 @@ frame ID and watch its payload change as you step or play through that ID's fram
 views share one position: the payload bit grid, a graph of every data byte around the
 current frame, and a per-byte table holding the reference, seek and graph settings.
 
-WinCAN keeps the semantics but splits the logic from the drawing:
+CanYeAye keeps the semantics but splits the logic from the drawing:
 
 | Piece | Location |
 |---|---|
-| Reference / seek / trigger state machine | `src/WinCAN.Core/Analysis/FlowViewSession.cs` |
-| Window view model, playback timers, live queue, graph series | `src/WinCAN.App/ViewModels/FlowViewWindowViewModel.cs` |
-| Payload bit grid (custom drawn) | `src/WinCAN.App/Controls/FlowBitGrid.cs` |
-| Byte graph (custom drawn) | `src/WinCAN.App/Controls/FlowGraphControl.cs` |
-| Window layout and keyboard shortcuts | `src/WinCAN.App/Views/FlowViewWindow.axaml(.cs)` |
+| Reference / seek / trigger state machine | `src/CanYeAye.Core/Analysis/FlowViewSession.cs` |
+| Window view model, playback timers, live queue, graph series | `src/CanYeAye.App/ViewModels/FlowViewWindowViewModel.cs` |
+| Payload bit grid (custom drawn) | `src/CanYeAye.App/Controls/FlowBitGrid.cs` |
+| Byte graph (custom drawn) | `src/CanYeAye.App/Controls/FlowGraphControl.cs` |
+| Window layout and keyboard shortcuts | `src/CanYeAye.App/Views/FlowViewWindow.axaml(.cs)` |
 
 ## SavvyCAN semantics preserved
 
@@ -41,14 +41,14 @@ WinCAN keeps the semantics but splits the logic from the drawing:
 - **Live mode.** Follows the newest frame of the selected ID as traffic arrives instead of
   replaying the capture.
 
-## WinCAN deviations
+## CanYeAye deviations
 
-- **Full-width bit grid.** SavvyCAN draws an 8×8 square grid of pixel cells. WinCAN fills
+- **Full-width bit grid.** SavvyCAN draws an 8×8 square grid of pixel cells. CanYeAye fills
   the panel: the bits of each byte are wide bars across the whole width (one byte per row up
   to 8 bytes, two up to 32, four otherwise), with no per-cell border and no byte-group
   separators. Repeats of the `7..0` header and the byte number down the left keep the
   orientation readable.
-- **Reference visibility without auto reference.** SavvyCAN only flashes changes; WinCAN
+- **Reference visibility without auto reference.** SavvyCAN only flashes changes; CanYeAye
   keeps differences against the static reference visible (green/red) until the reference is
   edited or a new ID is selected, so a static reference stays useful while paused.
 - **Custom graph instead of QCustomPlot.** `FlowGraphControl` draws the axes, series, frame
@@ -61,7 +61,7 @@ WinCAN keeps the semantics but splits the logic from the drawing:
 - **Keyboard.** `R` toggles play/pause, `T`/`Y` step backward/forward, matching the
   shortcut mnemonics in the window. Text boxes swallow the keys while they have focus.
 - **Window behaviour.** One Flow View window at a time (Tools → Flow View… re-activates it);
-  geometry is stored in WinCAN's own settings (`FlowWindowWidth/Height/X/Y`), never in
+  geometry is stored in CanYeAye's own settings (`FlowWindowWidth/Height/X/Y`), never in
   SavvyCAN's QSettings keys.
 - **Limits.** The grid and graph cover up to 64 payload bytes (`FlowViewSession.MaxBytes`);
   FlexRay frames can be longer, but only the first 64 bytes are shown.
@@ -76,7 +76,7 @@ grid without restarting the change flash.
 
 ## Tests
 
-`tests/WinCAN.Tests/Analysis/FlowViewSessionTests.cs` covers the UI-independent rules:
+`tests/CanYeAye.Tests/Analysis/FlowViewSessionTests.cs` covers the UI-independent rules:
 reference defaults and auto-reference stepping, seek matches (including `-1` being
 disabled and values above `0xFF` clamping), trigger toggling and change detection, clamping
 at both ends and looping, byte-count tracking, live append behaviour, and capture reset

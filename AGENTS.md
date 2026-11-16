@@ -1,6 +1,6 @@
-# AGENTS.md — WinCAN
+# AGENTS.md — CanYeAye
 
-WinCAN is a .NET 10 port of [SavvyCAN](https://github.com/collin80/SavvyCAN) (Qt6/C++17).
+CanYeAye is a .NET 10 port of [SavvyCAN](https://github.com/collin80/SavvyCAN) (Qt6/C++17).
 Goal: full feature parity, equivalent UX (modernized visuals, not a Qt pixel clone), same
 connectivity and same log/DBC file formats.
 
@@ -30,12 +30,12 @@ Design layer boundaries before filling them in.
 ## Planned solution layout
 
 ```
-WinCAN.sln
-src/WinCAN.Core          frame model, timestamps, filters, file I/O, DBC, scripting host
-src/WinCAN.Connections   transport abstraction + GVRET, Lawicel, socketcand, MQTT, PCAN, Vector
-src/WinCAN.App           Avalonia UI, MVVM (CommunityToolkit.Mvvm)
-tests/WinCAN.Tests       xUnit: parser round-trips, protocol framing, DBC, filter logic
-build/macos              package-app.sh: osx publish -> WinCAN.app bundle + zip
+CanYeAye.sln
+src/CanYeAye.Core          frame model, timestamps, filters, file I/O, DBC, scripting host
+src/CanYeAye.Connections   transport abstraction + GVRET, Lawicel, socketcand, MQTT, PCAN, Vector
+src/CanYeAye.App           Avalonia UI, MVVM (CommunityToolkit.Mvvm)
+tests/CanYeAye.Tests       xUnit: parser round-trips, protocol framing, DBC, filter logic
+build/macos              package-app.sh: osx publish -> CanYeAye.app bundle + zip
 ```
 
 Update this section if the layout changes during scaffolding.
@@ -66,7 +66,7 @@ Update this section if the layout changes during scaffolding.
 - IDs are 11-bit or 29-bit; preserve extended/remote flags through file formats.
 - File-format compatibility is semantic, not just parseable: validate with round-trip tests
   against `C:\Github\SavvyCAN\examples` (read-only), including timestamps and flags.
-- Settings are QSettings (registry on Windows) in SavvyCAN. WinCAN uses its own store; do not
+- Settings are QSettings (registry on Windows) in SavvyCAN. CanYeAye uses its own store; do not
   read/write SavvyCAN keys even for "compatibility".
 - SavvyCAN vendors everything; here NuGet is allowed. Prefer maintained, permissively
   licensed packages and pin versions centrally.
@@ -77,13 +77,13 @@ Update this section if the layout changes during scaffolding.
 
 ## Commands
 
-The solution is scaffolded (`WinCAN.slnx`, SDK pinned by `global.json`). Always run from the
+The solution is scaffolded (`CanYeAye.slnx`, SDK pinned by `global.json`). Always run from the
 repo root so the pinned SDK is used:
 
 ```powershell
 dotnet build
 dotnet test --nologo -v q
-dotnet run --project src/WinCAN.App
+dotnet run --project src/CanYeAye.App
 dotnet test --filter FullyQualifiedName~FileFormats
 ```
 
@@ -106,7 +106,7 @@ git push origin v0.1.3
 - **build-test** (windows-latest, .NET 10.0.404): restore (NuGet cache), Release build and
   `dotnet test` (314 tests). Needs `tag-on-main`.
 - **publish**: self-contained `win-x64` (zip), `linux-x64` (tar.gz) and `osx-arm64`
-  (`WinCAN.app` bundle, ad-hoc signed, zipped by `build/macos/package-app.sh`) artifacts, one
+  (`CanYeAye.app` bundle, ad-hoc signed, zipped by `build/macos/package-app.sh`) artifacts, one
   runner per RID. The tag (without the leading `v`) becomes the assembly/package version.
 - **release**: creates the GitHub Release for the pushed tag with the generated notes and both
   packages.
@@ -116,33 +116,35 @@ fails the gate produces no build, package or release.
 
 ## Progress so far
 
-- `WinCAN.Core`: `CanFrame` / `FrameTimestamp` (CommFrame semantics), `CanFilter`, `CanIdParser`,
+- `CanYeAye.Core`: `CanFrame` / `FrameTimestamp` (CommFrame semantics), `CanFilter`, `CanIdParser`,
   `FrameStore`, settings store, and the log-format layer
-  (`src/WinCAN.Core/FileFormats`, `LogFormatRegistry`).
+  (`src/CanYeAye.Core/FileFormats`, `LogFormatRegistry`).
 - Log formats implemented: native GVRET CSV (V1/V2 incl. FD/FlexRay), CRTD, BusMaster,
   Microchip, Vector trace, IXXAT MiniLog, CAN-DO, Vehicle Spy, candump, Lawicel, PCAN,
   CANalyzer ASC, CARBUS, CANHacker, Generic CSV, Cabana, CANOpen Magic, IXXAT CSV, CANWise,
   Kvaser (decimal/hex), CANalyzer BLF (containers + zlib), pcap/pcapng (SocketCAN and Linux
   cooked captures), Tesla AP snapshots, CANServer binary and CLX000.
-- `WinCAN.Connections`: `ICanConnection`, `CanConnectionManager`, option records, text
+- `CanYeAye.Connections`: `ICanConnection`, `CanConnectionManager`, option records, text
   protocols (`GvretProtocol`, `LawicelProtocol`, `SocketCanDProtocol`, `CanServerProtocol`,
   `CanLogServerProtocol`, `MqttFrameCodec`), and transport implementations over serial/TCP/UDP
   (`GvretConnection`, `LawicelConnection`, `SocketCanDConnection`, `CanServerConnection`,
   `CanLogServerConnection`, `MqttConnection`) plus `PcanConnection` (PEAK PCAN-USB over
   PCAN-Basic, classic CAN, channel detection via `PCAN_CHANNEL_CONDITION`) and passive UDP
   discovery (`ConnectionDiscovery`: GVRET beacons on 17222, socketcand CANBeacon XML on 42000).
-- `WinCAN.Core.Dbc`: model (`DbcFile`, `DbcMessage`, `DbcSignal`, nodes/attributes/value
+- `CanYeAye.Core.Dbc`: model (`DbcFile`, `DbcMessage`, `DbcSignal`, nodes/attributes/value
   tables), `SignalCodec` (sawtooth extract/insert + float/string decode), `DbcFileReader`
   (SavvyCAN grammar with fault list), `DbcFileWriter` (byte-stable save incl. CAN FD
   `VFrameFormat`/`CANFD_BRS` sync) and `DbcDatabase` (multi-file lookup, J1939/GMLAN).
   Validated against SavvyCAN's `examples/*.dbc` and the 17 real files in `DBCsamples`
-  (copied to `tests/WinCAN.Tests/Fixtures/DbcSamples`).
-- `WinCAN.Core.Protocols`: ISO-TP transport (`IsoTpHandler`, single/multi-frame, flow control,
+  (copied to `tests/CanYeAye.Tests/Fixtures/DbcSamples`); both folders are git-ignored, so
+  `DbcSampleValidationTests` only exercises whatever is present locally and is a no-op in a
+  fresh clone or on CI.
+- `CanYeAye.Core.Protocols`: ISO-TP transport (`IsoTpHandler`, single/multi-frame, flow control,
   segmented TX), UDS (`UdsHandler`) and OBD-II (full Mode 01 PID table, `Obd2Dbc` generator,
-  `Obd2Poller`). `WinCAN.Core.Scripting.ScriptHost` runs SavvyCAN `.js` files on Jint with the
+  `Obd2Poller`). `CanYeAye.Core.Scripting.ScriptHost` runs SavvyCAN `.js` files on Jint with the
   `host`/`can`/`isotp`/`uds` globals and positional callbacks; all four `examples/*.js` run
   unmodified.
-- `WinCAN.App` (Avalonia): main window with the SavvyCAN right-hand frame panel (total/FPS,
+- `CanYeAye.App` (Avalonia): main window with the SavvyCAN right-hand frame panel (total/FPS,
   suspend, normalize, clear, keep-filters, auto-scroll, overwrite mode with counts, interpret
   frames, expand/collapse, bus filtering), reorderable/hideable grid columns (incl. ASCII),
   in-row DBC interpretation, zebra-striped rows, vertically centred Data cells, status bar, and
@@ -166,7 +168,7 @@ fails the gate produces no build, package or release.
   observed rate is below the threshold. Header stays fixed while scrolling; the ID filter list
   is seeded from the main window's ID filters when it opens, and IDs that arrive later are
   added checked by default.
-- Flow View (parity with `re/flowviewwindow`): `WinCAN.Core.Analysis.FlowViewSession` holds the
+- Flow View (parity with `re/flowviewwindow`): `CanYeAye.Core.Analysis.FlowViewSession` holds the
   frames of the selected ID plus the auto-reference, seek and trigger state (unit tested); the
   window lists every capture ID while ignoring the main window's filters, steps one frame
   (`T`/`Y`) or plays forward/backward (`R`) at a configurable interval with looping, follows
@@ -177,7 +179,7 @@ fails the gate produces no build, package or release.
   changes. The byte graph is a custom windowed control with a range slider, per-byte `Graph?`
   toggle and an eight-colour palette. Geometry persists; design notes:
   `docs/research/flow-view.md`.
-- Detailed Frame Information (parity with `re/frameinfowindow`): `WinCAN.Core.Analysis`
+- Detailed Frame Information (parity with `re/frameinfowindow`): `CanYeAye.Core.Analysis`
   `FrameInfoAnalyzer` builds a snapshot report for one ID (per-byte range/`ChangedBits`/value
   histogram/series, 64-bit set counts and change rates, seconds-aware interval statistics with
   a 20-bin histogram, DBC signal value histograms, J1939/GMLAN decoding, and a detail-node tree
@@ -186,7 +188,7 @@ fails the gate produces no build, package or release.
   and interval histograms and eight per-byte value graphs. ID list, detail tree, save-all-
   details, last-window geometry and Tools → Detailed Frame Information… wiring are in place;
   13 analyzer tests. Design notes: `docs/research/frame-info.md`.
-- J1939 node analysis (WinCAN original, no SavvyCAN equivalent): `WinCAN.Core.Analysis`
+- J1939 node analysis (CanYeAye original, no SavvyCAN equivalent): `CanYeAye.Core.Analysis`
   (`J1939NodeNames` with load/save file and settings persistence, `NodeTraffic` per source /
   conversation / broadcast). The Frame Filtering window keeps the per-ID list on its
   `Frame IDs` tab and adds a `J1939 Nodes` tab for renaming nodes and bulk-selecting a node's
@@ -203,7 +205,9 @@ fails the gate produces no build, package or release.
   to the app menu's Quit) and shortcuts use Cmd (`NativeMenuBridge.SetShortcut`). PCAN uses a
   `DllImportResolver` in `PcanNative` that maps `PCANBasic.dll` to MacCAN's `libPCBUSB.dylib`
   (macOS) or `libpcanbasic.so` (Linux) - same PCAN-Basic C API. Vector XL has no macOS driver.
-- Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
+  The About box is `Views/AboutWindow` (version from `AssemblyInformationalVersion`) and is
+  reachable from macOS's application menu and from Tools → About CanYeAye… on every platform.
+- Fixtures copied from SavvyCAN's `examples` live in `tests/CanYeAye.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 
 ### Next session

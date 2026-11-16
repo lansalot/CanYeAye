@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="MQTTnet" />
+    <PackageReference Include="System.IO.Ports" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="CanYeAye.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CanYeAye.Core\CanYeAye.Core.csproj" />
+  </ItemGroup>
+</Project>

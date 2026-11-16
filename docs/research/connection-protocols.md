@@ -1,4 +1,4 @@
-# WinCAN connection protocol spec (port of SavvyCAN `connections/`)
+# CanYeAye connection protocol spec (port of SavvyCAN `connections/`)
 
 Source of truth: `C:\Github\SavvyCAN\connections\{gvretserial,lawicel_serial,socketcand,canserver,canlogserver,canconnection,canbus,canconmanager,canconfactory,mqtt_bus}.{h,cpp}`,
 `canconconst.h`, `canbus.cpp`, `can_structs.h`, `utils/lfqueue.h`, plus `connectionwindow.cpp` /
@@ -68,7 +68,7 @@ Per-driver ctor parameters actually used (table):
 - Lawicel serial speed dropdown: `115200, 150000, 250000, 500000, 1000000, 2000000, 3000000`.
 - GVRET serial vs TCP decision (`canconfactory.cpp`): port string is **serial** if it starts with `/`, or contains `tty`/`serial`, or matches a system port name/system location; otherwise, if it contains `.`, it is TCP (`useTcp = true`). `REMOTE` type always means TCP.
 - Discovery: UDP listener on **17222** (`ShareAddress`, AnyIPv4) collects GVRET sender IPs (device broadcasts; no probe is sent). UDP listener on **42000** parses socketcand/kayak XML beacons: `<CANBeacon name=...><URL>can://ip:port</URL><Bus name=.../></CANBeacon>` → entry string `bus1,bus2@name (can://ip:port)`.
-- Persistence keys (SavvyCAN QSettings; WinCAN keeps its own store but same field names are fine): `Main/ValidateComm`, `Main/TimeClock`, `Remote/User`, `Remote/Host`, `Remote/Port`, `Remote/Pass`, `connections/portNames`, `connections/driverNames`, `connections/devTypes`, `connections/serialSpeeds`, `connections/busSpeeds`, `connections/isCanFds`, `connections/DataRates`, `connections/listenOnlys`, `connections/actives`.
+- Persistence keys (SavvyCAN QSettings; CanYeAye keeps its own store but same field names are fine): `Main/ValidateComm`, `Main/TimeClock`, `Remote/User`, `Remote/Host`, `Remote/Port`, `Remote/Pass`, `connections/portNames`, `connections/driverNames`, `connections/devTypes`, `connections/serialSpeeds`, `connections/busSpeeds`, `connections/isCanFds`, `connections/DataRates`, `connections/listenOnlys`, `connections/actives`.
 
 ---
 
@@ -290,7 +290,7 @@ the client-side grammar above:
 The transport reports CONNECTED after the bus-parameters/validation reply, exposes one bus, and
 the bus range in the UI follows the device-reported count (`GvretConnection.BusesChanged` →
 `CanConnectionManager` renumbering). Deterministic coverage lives in
-`tests/WinCAN.Tests/Transports/GvretConnectionTests.cs` (mock TCP device: init preamble, bus
+`tests/CanYeAye.Tests/Transports/GvretConnectionTests.cs` (mock TCP device: init preamble, bus
 config, frame reception, no-reply timeout) and `CanConnectionManagerTests.cs`.
 
 ---
@@ -380,7 +380,7 @@ ip         = tail.left(indexOf(':'))
 port       = tail after last ':'  (toInt)
 mNumBuses  = hostCanIDs.count()
 ```
-In WinCAN parse with `Uri` after trimming the trailing `)`/`)` artefact, then split the prefix on `,`.
+In CanYeAye parse with `Uri` after trimming the trailing `)`/`)` artefact, then split the prefix on `,`.
 Each bus is initialised to `active=true, listenOnly=false, speed=500000` and marked configured. Status starts NOT_CONNECTED.
 
 ### 3.2 Lifecycle / threading
@@ -503,7 +503,7 @@ Three space-separated fields required.
 ### 6.1 Connection
 
 - The "port" string is the **topic base name**; one CAN bus.
-- Broker settings (QSettings; WinCAN store equivalents):
+- Broker settings (QSettings; CanYeAye store equivalents):
   `Remote/User` default `"Anonymous"`, `Remote/Host` default `"api.savvycan.com"`, `Remote/Port` default `8883`, `Remote/Pass` default empty and **encrypted with SimpleCrypt key `0xdeadbeefface6285`** (port the decryption or, better, use Windows DPAPI/ProtectedData with the same "value is opaque bytes" contract).
 - Port `8883` → TLS using default `QSslConfiguration`; any other port → plain TCP with the first resolved `QHostAddress` from `QHostInfo::fromName(host)`.
 - Client ID: 12 random chars from `[A-Za-z0-9]` (`0..25→A-Z, 26..51→a-z, 52..61→0-9`).
@@ -544,12 +544,12 @@ TX: `frameId() & 0x20000000` (error frames) short-circuit without publishing; ex
 - **CANserver/MQTT/GVRET-FD** carry binary payloads up to 64 bytes (GVRET FD), 254 is only reachable via FlexRay (not in these drivers).
 - Reproduce the reference's **deliberate quirks** (Lawicel decimal classic DLC, CANserver's naive timestamp concatenation, GVRET's drop on `len > 64`/`len > 8` clamping, socketcand's `token[2] as double` seconds), and **fix** the reference's clear bugs: GVRET `GET_ANALOG_INPUTS` never leaving the state, socketcand overwriting bus speed with 250000 in `piSetBusSettings`, and Lawicel DLC `toInt()` fallback reading mid-payload.
 
-## 8. WinCAN protocol deviations (deliberate fixes)
+## 8. CanYeAye protocol deviations (deliberate fixes)
 
-Implemented in `src/WinCAN.Connections/Protocols`, each covered by tests in
-`tests/WinCAN.Tests/Protocols`:
+Implemented in `src/CanYeAye.Connections/Protocols`, each covered by tests in
+`tests/CanYeAye.Tests/Protocols`:
 
-| Driver | Reference behaviour | WinCAN behaviour | Why |
+| Driver | Reference behaviour | CanYeAye behaviour | Why |
 |---|---|---|---|
 | Lawicel TX | error-frame guard `frameId() & 0x20000000` can never fire (the accessor masks the bit off), so error frames are sent as ID 0 | error frames are not sent | Matches the guard's stated intent |
 | socketcand TX | extended IDs set bit 31 in a signed `int` and print with a minus sign (`-1f0e0000`) | ID printed as unsigned 32-bit hex with bit 31 set (`98daf110`) | The host parses the ID as unsigned; the reference's output can never be understood |
@@ -561,9 +561,9 @@ Lawicel's DECIMAL classic DLC, HEX CAN FD DLC codes, 4-hex-digit hardware counte
 
 ---
 
-## 9. PCAN-USB (`PcanConnection`, WinCAN native)
+## 9. PCAN-USB (`PcanConnection`, CanYeAye native)
 
-SavvyCAN reaches PEAK adapters through Qt SerialBus's `peakcan` plugin. WinCAN calls PEAK's
+SavvyCAN reaches PEAK adapters through Qt SerialBus's `peakcan` plugin. CanYeAye calls PEAK's
 **PCAN-Basic** API directly (`PCANBasic.dll`), so USB enumeration is owned by the PEAK driver
 and channel polling in the device manager is not needed.
 

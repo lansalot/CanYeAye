@@ -7,7 +7,7 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
     <Version>0.1.0</Version>
-    <Authors>WinCAN contributors</Authors>
+    <Authors>CanYeAye contributors</Authors>
     <Copyright>Based on SavvyCAN (C) 2015-2026 Collin Kidder</Copyright>
   </PropertyGroup>
 </Project>

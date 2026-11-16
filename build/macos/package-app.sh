@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Publishes WinCAN for macOS and wraps it in a WinCAN.app bundle (+ zip).
+# Publishes CanYeAye for macOS and wraps it in a CanYeAye.app bundle (+ zip).
 #
 #   build/macos/package-app.sh [version] [rid]
 #
 # version defaults to 0.0.0-dev, rid to the host architecture (osx-arm64 / osx-x64).
-# Output: artifacts/macos/WinCAN.app and artifacts/macos/wincan-<rid>.zip
+# Output: artifacts/macos/CanYeAye.app and artifacts/macos/canyeaye-<rid>.zip
 #
 # The bundle is ad-hoc signed (required to run on Apple silicon) but not notarized, so a
 # downloaded copy is quarantined by Gatekeeper; clear it with:
-#   xattr -dr com.apple.quarantine /Applications/WinCAN.app
+#   xattr -dr com.apple.quarantine /Applications/CanYeAye.app
 set -euo pipefail
 
 version="${1:-0.0.0-dev}"
@@ -23,12 +23,12 @@ fi
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 out="$repo_root/artifacts/macos"
 publish="$out/publish-$rid"
-app="$out/WinCAN.app"
+app="$out/CanYeAye.app"
 
-rm -rf "$publish" "$app" "$out/wincan-$rid.zip"
+rm -rf "$publish" "$app" "$out/canyeaye-$rid.zip"
 mkdir -p "$out"
 
-dotnet publish "$repo_root/src/WinCAN.App/WinCAN.App.csproj" \
+dotnet publish "$repo_root/src/CanYeAye.App/CanYeAye.App.csproj" \
   --configuration Release \
   --runtime "$rid" \
   --self-contained true \
@@ -47,10 +47,10 @@ cat > "$app/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>WinCAN</string>
-  <key>CFBundleDisplayName</key><string>WinCAN</string>
-  <key>CFBundleIdentifier</key><string>org.wincan.WinCAN</string>
-  <key>CFBundleExecutable</key><string>WinCAN.App</string>
+  <key>CFBundleName</key><string>CanYeAye</string>
+  <key>CFBundleDisplayName</key><string>CanYeAye</string>
+  <key>CFBundleIdentifier</key><string>org.canyeaye.CanYeAye</string>
+  <key>CFBundleExecutable</key><string>CanYeAye.App</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleShortVersionString</key><string>$short_version</string>
@@ -64,12 +64,12 @@ cat > "$app/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-chmod +x "$app/Contents/MacOS/WinCAN.App"
+chmod +x "$app/Contents/MacOS/CanYeAye.App"
 
 # Ad-hoc signature over the whole bundle (individual dylibs are signed by publish).
 codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict "$app"
 
-ditto -c -k --keepParent "$app" "$out/wincan-$rid.zip"
+ditto -c -k --keepParent "$app" "$out/canyeaye-$rid.zip"
 echo "Created $app"
-echo "Created $out/wincan-$rid.zip"
+echo "Created $out/canyeaye-$rid.zip"

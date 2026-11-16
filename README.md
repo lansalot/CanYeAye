@@ -1,12 +1,12 @@
-# WinCAN
+# CanYeAye
 
-WinCAN is a modern, cross-platform reimplementation of
+CanYeAye is a modern, cross-platform reimplementation of
 [SavvyCAN](https://github.com/collin80/SavvyCAN) built on **.NET 10** and **Avalonia**.
 It captures, records, decodes and analyses CAN bus traffic while keeping SavvyCAN's log
 formats, DBC support, connection types and JavaScript scripting API — with a redesigned UI,
 a cansniffer-style analysis view and an interactive J1939 node graph.
 
-![WinCAN main window with the frame view, J1939 node names and the docked frame filter](docs/images/main-window.png)
+![CanYeAye main window with the frame view, J1939 node names and the docked frame filter](docs/images/main-window.png)
 
 ## Features
 
@@ -101,30 +101,32 @@ any platform. On macOS, serial adapters appear as `/dev/cu.usbmodem…` / `/dev/
 ```powershell
 dotnet build
 dotnet test --nologo -v q
-dotnet run --project src/WinCAN.App
+dotnet run --project src/CanYeAye.App
 
 # open a log (and optional DBC files) at startup
-dotnet run --project src/WinCAN.App -- path\to\capture.csv path\to\database.dbc
+dotnet run --project src/CanYeAye.App -- path\to\capture.csv path\to\database.dbc
 ```
 
-WinCAN keeps its own settings at `%APPDATA%\WinCAN\settings.json` (Windows),
-`~/Library/Application Support/WinCAN/settings.json` (macOS) or `~/.config/WinCAN/settings.json`
+CanYeAye keeps its own settings at `%APPDATA%\CanYeAye\settings.json` (Windows),
+`~/Library/Application Support/CanYeAye/settings.json` (macOS) or `~/.config/CanYeAye/settings.json`
 (Linux); it never reads or writes SavvyCAN's QSettings registry keys.
 
-On macOS the menus live in the global menu bar (Quit is in the WinCAN application menu) and
+On macOS the menus live in the global menu bar (Quit is in the CanYeAye application menu) and
 shortcuts use Cmd instead of Ctrl (Open ⌘O, Save ⌘S, Connection ⌘K, Zoom ⌘= / ⌘- / ⌘0).
-To build a double-clickable `WinCAN.app` (ad-hoc signed, not notarized):
+macOS also gets an About item in the application menu; Tools → About CanYeAye… opens the same
+About box on every platform.
+To build a double-clickable `CanYeAye.app` (ad-hoc signed, not notarized):
 
 ```bash
-build/macos/package-app.sh            # -> artifacts/macos/WinCAN.app and wincan-osx-arm64.zip
-xattr -dr com.apple.quarantine WinCAN.app   # only needed for a downloaded copy
+build/macos/package-app.sh            # -> artifacts/macos/CanYeAye.app and canyeaye-osx-arm64.zip
+xattr -dr com.apple.quarantine CanYeAye.app   # only needed for a downloaded copy
 ```
 
 ## CI and releases
 
 `.github/workflows/build.yml` runs **only when a tag matching `v*` is pushed** — branch pushes
 and pull requests do not build. Pushing a tag builds and tests the commit, publishes
-self-contained **win-x64** (zip), **linux-x64** (tar.gz) and **osx-arm64** (`WinCAN.app` in a
+self-contained **win-x64** (zip), **linux-x64** (tar.gz) and **osx-arm64** (`CanYeAye.app` in a
 zip) packages and creates the GitHub
 Release for that tag with the generated notes. The tag without its leading `v` is used as the
 assembly/package version:
@@ -137,8 +139,8 @@ git push origin v0.1.3
 ## Compatibility and attribution
 
 - Log formats, DBC files, project/settings semantics and the scripting API follow SavvyCAN.
-  WinCAN is an independent port and is not affiliated with the SavvyCAN project.
-- SavvyCAN is MIT licensed (Collin Kidder and contributors). WinCAN's frame model derives
+  CanYeAye is an independent port and is not affiliated with the SavvyCAN project.
+- SavvyCAN is MIT licensed (Collin Kidder and contributors). CanYeAye's frame model derives
   from SavvyCAN's `can_structs.h`, which in turn derives from Qt's `QCanBusFrame`
   (LGPL/GPL family); see `AGENTS.md` for the licensing note before distributing binaries.
 - Development notes and the reference protocol research live in `AGENTS.md` and `docs/research/`.

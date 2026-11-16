@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CanYeAye.App/CanYeAye.App.csproj" />
+    <Project Path="src/CanYeAye.Connections/CanYeAye.Connections.csproj" />
+    <Project Path="src/CanYeAye.Core/CanYeAye.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CanYeAye.Tests/CanYeAye.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CanYeAye.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="CanYeAye.App.Views.SendFrameWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:MainWindowViewModel"
+        Width="360" Height="260"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="CanYeAye Send Frame">
+  <StackPanel Margin="16" Spacing="10">
+    <TextBlock Text="Send Frame" FontWeight="Bold" FontSize="16" />
+    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto">
+      <TextBlock Grid.Row="0" Grid.Column="0" Text="Bus" VerticalAlignment="Center" />
+      <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SendBus}" />
+      <TextBlock Grid.Row="1" Grid.Column="0" Text="ID (hex)" VerticalAlignment="Center" />
+      <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SendId}" />
+      <TextBlock Grid.Row="2" Grid.Column="0" Text="Data (hex)" VerticalAlignment="Center" />
+      <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SendData}" />
+    </Grid>
+    <StackPanel Orientation="Horizontal" Spacing="14">
+      <CheckBox Content="Extended" IsChecked="{Binding SendExtended}" />
+      <CheckBox Content="CAN FD" IsChecked="{Binding SendFd}" />
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+      <Button Content="Send" Command="{Binding SendFrameCommand}" Width="100" />
+      <Button Content="Close" Click="OnCloseClick" Width="90" />
+    </StackPanel>
+  </StackPanel>
+</Window>
