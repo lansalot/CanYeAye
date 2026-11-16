@@ -86,12 +86,17 @@
       <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
     </StackPanel>
 
-    <!-- QT SerialBus (not implemented) -->
-    <StackPanel IsVisible="{Binding IsQtSerialBus}" Spacing="4">
-      <TextBlock Text="SerialBus Device Type:" />
-      <ComboBox ItemsSource="{Binding QtSerialBusDeviceTypes}" SelectedItem="{Binding SelectedQtDeviceType}" />
-      <TextBlock Text="QT SerialBus devices are not implemented in this build."
-                 TextWrapping="Wrap" Opacity="0.7" />
+    <!-- PEAK PCAN-USB (PCAN-Basic) -->
+    <StackPanel IsVisible="{Binding IsPcan}" Spacing="4">
+      <TextBlock Text="PCAN-USB channel (1 = USB1):" />
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+        <ComboBox ItemsSource="{Binding PcanChannels}" SelectedItem="{Binding SelectedPcanChannel}"
+                  HorizontalAlignment="Stretch" />
+        <Button Grid.Column="1" Content="Detect" Command="{Binding DetectPcanCommand}" />
+      </Grid>
+      <TextBlock Text="CAN Bus Speed:" />
+      <ComboBox ItemsSource="{Binding BusSpeeds}" SelectedItem="{Binding Bitrate}" HorizontalAlignment="Stretch" />
+      <TextBlock Text="{Binding PcanStatus}" TextWrapping="Wrap" FontSize="11" Opacity="0.8" />
     </StackPanel>
 
     <!-- socketcand -->

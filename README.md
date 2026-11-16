@@ -27,9 +27,10 @@ a cansniffer-style analysis view and an interactive J1939 node graph.
   Vehicle Spy, candump, Lawicel, PCAN, CANalyzer ASC, CARBUS, CANHacker, Cabana, Kvaser,
   CANalyzer **BLF**, **pcap/pcapng**, Tesla AP snapshots, CANServer and CLX000 logs.
 - DBC manager with multi-file load/reorder, message/signal decoding, J1939 and GMLAN support.
-- Connections: GVRET serial and network (TCP port 23), LAWICEL/SLCAN, socketcand, MQTT,
-  CANserver and CANlogserver, with passive UDP discovery. PCAN-Basic and Vector XL are kept
-  behind interfaces for Windows vendor DLLs.
+- Connections: GVRET serial and network (TCP port 23), LAWICEL/SLCAN, **PEAK PCAN-USB**
+  (classic CAN through PEAK's PCAN-Basic driver, with channel detection), socketcand, MQTT,
+  CANserver and CANlogserver, with passive UDP discovery. Vector XL remains behind an
+  interface for its Windows vendor DLL.
 - Send-frame window for arbitrary classic/CAN-FD frames.
 
 ### Analysis

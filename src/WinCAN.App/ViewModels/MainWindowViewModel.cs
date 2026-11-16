@@ -138,25 +138,12 @@ public partial class MainWindowViewModel : ObservableObject
         "Serial Connection (GVRET)",
         "Network connection (GVRET)",
         "LAWICEL / SLCAN Serial",
-        "QT SerialBus Devices (SocketCAN, PeakCAN, etc)",
+        "PEAK PCAN-USB",
         "socketcand (SocketCAN over Ethernet)",
         "MQTT Connection",
         "CANserver",
         "CANlogserver (TCP ASCII)",
     ];
-
-    public IReadOnlyList<string> QtSerialBusDeviceTypes { get; } =
-    [
-        "passthrucan",
-        "peakcan",
-        "systeccan",
-        "tinycan",
-        "vectorcan",
-        "virtualcan",
-    ];
-
-    [ObservableProperty]
-    private string _selectedQtDeviceType = "passthrucan";
 
     public IReadOnlyList<string> SaveFormatNames { get; } =
         LogFormatRegistry.SaveFilters.Select(f => f.Name).ToList();
@@ -243,6 +230,47 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private int _canLogServerPort = 23;
 
+    /// <summary>PCAN-USB channels reported by the PCAN-Basic driver (1-based).</summary>
+    public ObservableCollection<int> PcanChannels { get; } = [];
+
+    [ObservableProperty]
+    private int _selectedPcanChannel = 1;
+
+    [ObservableProperty]
+    private string _pcanStatus = "Use Detect to look for a PCAN-USB adapter.";
+
+    [RelayCommand]
+    private void DetectPcan()
+    {
+        var channels = PcanConnection.GetAvailableChannels();
+        PcanChannels.Clear();
+        foreach (var channel in channels)
+        {
+            PcanChannels.Add(channel);
+        }
+
+        if (channels.Count == 0)
+        {
+            for (var channel = 1; channel <= 16; channel++)
+            {
+                PcanChannels.Add(channel);
+            }
+
+            PcanStatus = "No PCAN-USB adapter found (check the PEAK driver and the USB connection).";
+            return;
+        }
+
+        if (!channels.Contains(SelectedPcanChannel))
+        {
+            SelectedPcanChannel = channels[0];
+        }
+
+        var hardware = PcanConnection.GetHardwareName(SelectedPcanChannel);
+        PcanStatus = string.IsNullOrEmpty(hardware)
+            ? $"PCAN channel(s) available: {string.Join(", ", channels.Select(channel => $"USB{channel}"))}"
+            : $"{hardware} on USB{SelectedPcanChannel}";
+    }
+
     [ObservableProperty]
     private uint _bitrate = 500_000;
 
@@ -305,7 +333,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool IsLawicel => SelectedConnectionType == "LAWICEL / SLCAN Serial";
 
-    public bool IsQtSerialBus => SelectedConnectionType == "QT SerialBus Devices (SocketCAN, PeakCAN, etc)";
+    public bool IsPcan => SelectedConnectionType == "PEAK PCAN-USB";
 
     public bool IsSocketCand => SelectedConnectionType == "socketcand (SocketCAN over Ethernet)";
 
@@ -315,19 +343,23 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool IsCanLogServer => SelectedConnectionType == "CANlogserver (TCP ASCII)";
 
-    public bool CanConnect => !IsQtSerialBus;
+    public bool CanConnect => true;
 
     partial void OnSelectedConnectionTypeChanged(string value)
     {
         OnPropertyChanged(nameof(IsGvretSerial));
         OnPropertyChanged(nameof(IsGvretTcp));
         OnPropertyChanged(nameof(IsLawicel));
-        OnPropertyChanged(nameof(IsQtSerialBus));
+        OnPropertyChanged(nameof(IsPcan));
         OnPropertyChanged(nameof(IsSocketCand));
         OnPropertyChanged(nameof(IsMqtt));
         OnPropertyChanged(nameof(IsCanServer));
         OnPropertyChanged(nameof(IsCanLogServer));
         OnPropertyChanged(nameof(CanConnect));
+        if (IsPcan)
+        {
+            DetectPcan();
+        }
     }
 
     public string CaptureButtonText => CaptureSuspended ? "Restart Capturing" : "Suspend Capturing";
@@ -852,8 +884,11 @@ public partial class MainWindowViewModel : ObservableObject
                 BaudRate = BaudRate,
                 Bitrate = Bitrate,
             }),
-            "QT SerialBus Devices (SocketCAN, PeakCAN, etc)" =>
-                throw new NotSupportedException("QT SerialBus devices are not implemented in this build."),
+            "PEAK PCAN-USB" => new PcanConnection(new PcanConnectionOptions
+            {
+                Channel = SelectedPcanChannel,
+                Bitrate = Bitrate,
+            }),
             "socketcand (SocketCAN over Ethernet)" => new SocketCanDConnection(new SocketCanDConnectionOptions
             {
                 Host = Host,

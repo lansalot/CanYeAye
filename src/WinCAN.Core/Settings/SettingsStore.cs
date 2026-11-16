@@ -40,6 +40,9 @@ public sealed record AppSettings
 
     public int CanLogServerPort { get; init; } = 23;
 
+    /// <summary>PCAN-USB channel (1 = USB1).</summary>
+    public int PcanChannel { get; init; } = 1;
+
     public bool TimestampAbsolute { get; init; }
 
     public bool ShowDecimalIds { get; init; }

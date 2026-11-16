@@ -114,8 +114,9 @@ and test.
   protocols (`GvretProtocol`, `LawicelProtocol`, `SocketCanDProtocol`, `CanServerProtocol`,
   `CanLogServerProtocol`, `MqttFrameCodec`), and transport implementations over serial/TCP/UDP
   (`GvretConnection`, `LawicelConnection`, `SocketCanDConnection`, `CanServerConnection`,
-  `CanLogServerConnection`, `MqttConnection`) plus passive UDP discovery
-  (`ConnectionDiscovery`: GVRET beacons on 17222, socketcand CANBeacon XML on 42000).
+  `CanLogServerConnection`, `MqttConnection`) plus `PcanConnection` (PEAK PCAN-USB over
+  PCAN-Basic, classic CAN, channel detection via `PCAN_CHANNEL_CONDITION`) and passive UDP
+  discovery (`ConnectionDiscovery`: GVRET beacons on 17222, socketcand CANBeacon XML on 42000).
 - `WinCAN.Core.Dbc`: model (`DbcFile`, `DbcMessage`, `DbcSignal`, nodes/attributes/value
   tables), `SignalCodec` (sawtooth extract/insert + float/string decode), `DbcFileReader`
   (SavvyCAN grammar with fault list), `DbcFileWriter` (byte-stable save incl. CAN FD

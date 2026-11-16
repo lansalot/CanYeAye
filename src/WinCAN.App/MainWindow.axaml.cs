@@ -62,6 +62,7 @@ public partial class MainWindow : Window
         _viewModel.GvretTcpPort = _settings.GvretTcpPort;
         _viewModel.MqttPort = _settings.MqttPort;
         _viewModel.CanLogServerPort = _settings.CanLogServerPort;
+        _viewModel.SelectedPcanChannel = Math.Clamp(_settings.PcanChannel, 1, 16);
         if (_settings.LastConnectionType is { } connectionType &&
             _viewModel.ConnectionTypes.Contains(connectionType))
         {
@@ -160,6 +161,7 @@ public partial class MainWindow : Window
                 GvretTcpPort = _viewModel.GvretTcpPort,
                 MqttPort = _viewModel.MqttPort,
                 CanLogServerPort = _viewModel.CanLogServerPort,
+                PcanChannel = _viewModel.SelectedPcanChannel,
                 NodeNames = _viewModel.NodeNames.Snapshot()
                     .OrderBy(pair => pair.Key)
                     .Select(pair => new WinCAN.Core.Settings.NodeNameEntry(pair.Key, pair.Value))

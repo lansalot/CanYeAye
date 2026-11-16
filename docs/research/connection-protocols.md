@@ -558,3 +558,40 @@ Implemented in `src/WinCAN.Connections/Protocols`, each covered by tests in
 The Lawicel and socketcand **receive** paths keep the reference grammar exactly (including
 Lawicel's DECIMAL classic DLC, HEX CAN FD DLC codes, 4-hex-digit hardware counter with the
 60 s wrap, and socketcand's `< hi >`/`< ok >` handshake with its partial-datagram buffer).
+
+---
+
+## 9. PCAN-USB (`PcanConnection`, WinCAN native)
+
+SavvyCAN reaches PEAK adapters through Qt SerialBus's `peakcan` plugin. WinCAN calls PEAK's
+**PCAN-Basic** API directly (`PCANBasic.dll`), so USB enumeration is owned by the PEAK driver
+and channel polling in the device manager is not needed.
+
+- USB identity: **VID `0x0C72`, PID `0x000C`** (PCAN-USB). The driver binds the device; the
+  application addresses it by channel handle.
+- Channels: `CAN_Initialize(channel, BTR0BTR1, 0, 0, 0)` with
+  `PCAN_USBBUS1 = 0x0051` … `PCAN_USBBUS16 = 0x0060`.
+- Detection: `CAN_GetValue(ch, PCAN_CHANNEL_CONDITION = 0x0D)` → `AVAILABLE(1)` or
+  `OCCUPIED(2)`; `CAN_GetValue(ch, PCAN_HARDWARE_NAME = 0x0E)` returns `"PCAN-USB"`.
+- Bit timing constants used by the connection dialog:
+
+  | Bit rate | BTR0/BTR1 | Bit rate | BTR0/BTR1 |
+  |---|---|---|---|
+  | 1 Mbit/s | `0x0014` | 100 kbit/s | `0x432F` |
+  | 800 kbit/s | `0x0016` | 95 kbit/s | `0xC34E` |
+  | 500 kbit/s | `0x001C` | 83.333 kbit/s | `0x852B` |
+  | 250 kbit/s | `0x011C` | 50 kbit/s | `0x472F` |
+  | 125 kbit/s | `0x031C` | 33.333 kbit/s | `0x8B2F` |
+
+- Receive: poll `CAN_Read` roughly every 3 ms; `PCAN_ERROR_QRCVEMPTY` (0x20) means no frame.
+  The driver timestamp (`millis` + `millis_overflow` + `micros`) is anchored to the epoch on
+  the first frame so capture timestamps stay in microseconds.
+- Transmit: `CAN_Write` with standard 11-bit, extended 29-bit and RTR flags, classic payload
+  up to 8 bytes. **CAN-FD transmission is not implemented** in this transport yet.
+- Common status codes: `QRCVEMPTY 0x20`, `BUSLIGHT 0x4`, `BUSHEAVY 0x8`, `BUSOFF 0x10`,
+  `NODRIVER 0x200`, `HWINUSE 0x400` (another application owns the channel),
+  `ILLHW 0x1400` (no hardware on that channel), `INITIALIZE 0x4000000`.
+
+Live verification on the development machine: PCAN-USB detected on USB1 at 500 kbit/s,
+`CAN_Initialize` succeeds, and the connection reports `Connected` (the test bus was idle, so
+no frames were received).
