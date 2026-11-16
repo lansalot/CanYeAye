@@ -242,7 +242,25 @@ public partial class MainWindowViewModel : ObservableObject
     private string _loadStatus = string.Empty;
 
     [ObservableProperty]
-    private string _serialPort = "COM3";
+    private string _serialPort = DefaultSerialPort();
+
+    // Windows uses COMn names; macOS/Linux expose /dev nodes (prefer the macOS callout device).
+    private static string DefaultSerialPort()
+    {
+        if (OperatingSystem.IsWindows())
+            return "COM3";
+        try
+        {
+            var ports = System.IO.Ports.SerialPort.GetPortNames();
+            return ports.FirstOrDefault(p => p.StartsWith("/dev/cu.usb", StringComparison.Ordinal))
+                ?? ports.FirstOrDefault(p => p.StartsWith("/dev/ttyACM", StringComparison.Ordinal) || p.StartsWith("/dev/ttyUSB", StringComparison.Ordinal))
+                ?? string.Empty;
+        }
+        catch (PlatformNotSupportedException)
+        {
+            return string.Empty;
+        }
+    }
 
     [ObservableProperty]
     private int _baudRate = 115200;
@@ -288,7 +306,9 @@ public partial class MainWindowViewModel : ObservableObject
                 PcanChannels.Add(channel);
             }
 
-            PcanStatus = "No PCAN-USB adapter found (check the PEAK driver and the USB connection).";
+            PcanStatus = PcanConnection.IsDriverAvailable()
+                ? "No PCAN-USB adapter found (check the USB connection)."
+                : $"PCAN driver not installed: install {PcanConnection.DriverLibraryName}.";
             return;
         }
 

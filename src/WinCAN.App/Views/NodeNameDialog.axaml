@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterOwner"
         Title="Name J1939 node">
   <StackPanel Margin="18" Spacing="12">
-    <TextBlock x:Name="AddressText" FontSize="16" FontFamily="Consolas,Courier New,monospace" />
+    <TextBlock x:Name="AddressText" FontSize="16" FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" />
     <TextBox x:Name="NameBox" PlaceholderText="Node name" FontSize="15" MinHeight="36" />
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button Content="Cancel" Click="OnCancelClick" MinWidth="90" MinHeight="32" />

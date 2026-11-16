@@ -1,3 +1,4 @@
+﻿using System.Runtime.InteropServices;
 using WinCAN.Connections;
 using WinCAN.Connections.Transports;
 
@@ -33,5 +34,47 @@ public class PcanConnectionTests
         Assert.Equal(ConnectionType.Pcan, connection.Type);
         Assert.Equal("PCAN-USB 1", connection.Name);
         Assert.Single(connection.Buses);
+    }
+
+    [Fact]
+    public void MessageStructMatchesNativeLayout()
+    {
+        // TPCANMsg in PCANBasic.h / PCBUSB.h: DWORD ID, BYTE MSGTYPE, BYTE LEN, BYTE DATA[8].
+        Assert.Equal(16, Marshal.SizeOf<PcanNative.PcanMessage>());
+        Assert.Equal(4, (int)Marshal.OffsetOf<PcanNative.PcanMessage>(nameof(PcanNative.PcanMessage.MessageType)));
+        Assert.Equal(6, (int)Marshal.OffsetOf<PcanNative.PcanMessage>(nameof(PcanNative.PcanMessage.Data)));
+        Assert.Equal(8, Marshal.SizeOf<PcanNative.PcanTimestamp>());
+    }
+
+    [Fact]
+    public void LibraryCandidatesMatchPlatformDriver()
+    {
+        var candidates = PcanNative.LibraryCandidates();
+
+        if (OperatingSystem.IsMacOS())
+        {
+            Assert.All(candidates, c => Assert.EndsWith("libPCBUSB.dylib", c, StringComparison.Ordinal));
+            Assert.Contains("mac-can.com", PcanConnection.DriverLibraryName, StringComparison.Ordinal);
+        }
+        else if (OperatingSystem.IsLinux())
+        {
+            Assert.All(candidates, c => Assert.Contains("libpcanbasic.so", c, StringComparison.Ordinal));
+        }
+        else
+        {
+            Assert.Equal(["PCANBasic.dll"], candidates);
+        }
+    }
+
+    [Fact]
+    public void ChannelDetectionNeverThrowsWithoutDriver()
+    {
+        var channels = PcanConnection.GetAvailableChannels();
+
+        if (!PcanConnection.IsDriverAvailable())
+        {
+            Assert.Empty(channels);
+            Assert.Equal(string.Empty, PcanConnection.GetHardwareName(1));
+        }
     }
 }

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using WinCAN.App.Services;
@@ -110,6 +111,7 @@ public partial class MainWindow : Window
 
         DataContext = _viewModel;
         BuildSaveFormatMenu();
+        ConfigureMenus();
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.ScrollToEndRequested += OnScrollToEndRequested;
         _viewModel.RowExpansionChanged += OnRowExpansionChanged;
@@ -210,6 +212,19 @@ public partial class MainWindow : Window
     private void OnZoomInClick(object? sender, RoutedEventArgs e) => ApplyScale(_uiScale + 0.1);
 
     private void OnZoomResetClick(object? sender, RoutedEventArgs e) => ApplyScale(1.0);
+
+    private void ConfigureMenus()
+    {
+        NativeMenuBridge.SetShortcut(OpenLogMenuItem, Key.O);
+        NativeMenuBridge.SetShortcut(SaveLogMenuItem, Key.S);
+        NativeMenuBridge.SetShortcut(ConnectionSettingsMenuItem, Key.K);
+        NativeMenuBridge.SetShortcut(ZoomInMenuItem, Key.OemPlus);
+        NativeMenuBridge.SetShortcut(ZoomOutMenuItem, Key.OemMinus);
+        NativeMenuBridge.SetShortcut(ZoomResetMenuItem, Key.D0);
+
+        // macOS: global menu bar; Exit is the application menu's Quit (Cmd+Q) there.
+        NativeMenuBridge.Attach(this, MainMenu, ExitMenuItem);
+    }
 
     private void BuildSaveFormatMenu()
     {

@@ -11,19 +11,19 @@
         Title="WinCAN">
   <Canvas x:Name="ScaleHost" ClipToBounds="True">
   <DockPanel x:Name="RootContent">
-    <Menu DockPanel.Dock="Top">
+    <Menu x:Name="MainMenu" DockPanel.Dock="Top">
       <MenuItem Header="_File">
-        <MenuItem Header="_Open Log..." Command="{Binding OpenLogCommand}" />
-        <MenuItem Header="_Save Log..." Command="{Binding SaveLogCommand}" />
+        <MenuItem x:Name="OpenLogMenuItem" Header="_Open Log..." Command="{Binding OpenLogCommand}" />
+        <MenuItem x:Name="SaveLogMenuItem" Header="_Save Log..." Command="{Binding SaveLogCommand}" />
         <MenuItem x:Name="SaveFormatMenu" Header="Save _Format" />
         <Separator />
-        <MenuItem Header="E_xit" Click="OnExitClick" />
+        <MenuItem x:Name="ExitMenuItem" Header="E_xit" Click="OnExitClick" />
       </MenuItem>
       <MenuItem Header="_DBC">
         <MenuItem Header="_Manage DBC Files..." Click="OnDbcManagerClick" />
       </MenuItem>
       <MenuItem Header="_Connection">
-        <MenuItem Header="Connection _Settings..." Click="OnConnectionClick" />
+        <MenuItem x:Name="ConnectionSettingsMenuItem" Header="Connection _Settings..." Click="OnConnectionClick" />
         <Separator />
         <MenuItem Header="_Connect" Command="{Binding ConnectCommand}" />
         <MenuItem Header="_Disconnect" Command="{Binding DisconnectCommand}" />
@@ -35,9 +35,9 @@
         <MenuItem Header="Frame _Filtering..." Click="OnFrameFilterClick" />
         <MenuItem Header="Show _All Columns" Click="OnShowAllColumnsClick" />
         <Separator />
-        <MenuItem Header="Zoom _In" Click="OnZoomInClick" />
-        <MenuItem Header="Zoom _Out" Click="OnZoomOutClick" />
-        <MenuItem Header="_Reset Zoom (100%)" Click="OnZoomResetClick" />
+        <MenuItem x:Name="ZoomInMenuItem" Header="Zoom _In" Click="OnZoomInClick" />
+        <MenuItem x:Name="ZoomOutMenuItem" Header="Zoom _Out" Click="OnZoomOutClick" />
+        <MenuItem x:Name="ZoomResetMenuItem" Header="_Reset Zoom (100%)" Click="OnZoomResetClick" />
         <MenuItem Header="{Binding UiScaleLabel}" IsEnabled="False" />
       </MenuItem>
       <MenuItem Header="_Tools">
@@ -145,9 +145,9 @@
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
                 <StackPanel VerticalAlignment="Center">
-                  <TextBlock Text="{Binding Data}" FontFamily="Consolas,Courier New,monospace" />
+                  <TextBlock Text="{Binding Data}" FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" />
                   <TextBlock Text="{Binding Interpretation}" IsVisible="{Binding HasInterpretation}"
-                             TextWrapping="Wrap" FontFamily="Consolas,Courier New,monospace" Opacity="0.9" />
+                             TextWrapping="Wrap" FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" Opacity="0.9" />
                 </StackPanel>
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>

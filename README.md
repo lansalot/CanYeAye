@@ -28,7 +28,8 @@ a cansniffer-style analysis view and an interactive J1939 node graph.
   CANalyzer **BLF**, **pcap/pcapng**, Tesla AP snapshots, CANServer and CLX000 logs.
 - DBC manager with multi-file load/reorder, message/signal decoding, J1939 and GMLAN support.
 - Connections: GVRET serial and network (TCP port 23), LAWICEL/SLCAN, **PEAK PCAN-USB**
-  (classic CAN through PEAK's PCAN-Basic driver, with channel detection), socketcand, MQTT,
+  (classic CAN through the PCAN-Basic API, with channel detection: PEAK's `PCANBasic.dll` on
+  Windows, MacCAN's `libPCBUSB.dylib` on macOS, `libpcanbasic.so` on Linux), socketcand, MQTT,
   CANserver and CANlogserver, with passive UDP discovery. Vector XL remains behind an
   interface for its Windows vendor DLL.
 - Send-frame window for arbitrary classic/CAN-FD frames.
@@ -86,8 +87,16 @@ histogram, J1939/GMLAN decoding and DBC signal histograms for one ID of a frozen
 ## Getting started
 
 Requirements: the **.NET 10 SDK** (pinned by `global.json`, currently 10.0.404) and a
-desktop supported by Avalonia (Windows 10/11 or a Linux desktop). PCAN-Basic / Vector XL
-hardware also needs the vendor DLLs on Windows.
+desktop supported by Avalonia (Windows 10/11, macOS 13+ on Apple silicon or Intel, or a Linux
+desktop). Vendor drivers are only needed for their hardware:
+
+| Adapter | Windows | macOS | Linux |
+|---|---|---|---|
+| PEAK PCAN-USB | PEAK driver (`PCANBasic.dll`) | [MacCAN PCBUSB](https://www.mac-can.com) (`libPCBUSB.dylib` in `/usr/local/lib`) | PEAK `pcan` driver + `libpcanbasic.so` |
+| Vector XL (connection not implemented yet) | Vector driver (`vxlapi64.dll`) | not available (Vector ships no macOS driver) | not available |
+
+GVRET, LAWICEL/SLCAN, socketcand, MQTT, CANserver and CANlogserver need no vendor driver on
+any platform. On macOS, serial adapters appear as `/dev/cu.usbmodem…` / `/dev/cu.usbserial…`.
 
 ```powershell
 dotnet build
@@ -98,14 +107,25 @@ dotnet run --project src/WinCAN.App
 dotnet run --project src/WinCAN.App -- path\to\capture.csv path\to\database.dbc
 ```
 
-WinCAN keeps its own settings at `%APPDATA%\WinCAN\settings.json`; it never reads or writes
-SavvyCAN's QSettings registry keys.
+WinCAN keeps its own settings at `%APPDATA%\WinCAN\settings.json` (Windows),
+`~/Library/Application Support/WinCAN/settings.json` (macOS) or `~/.config/WinCAN/settings.json`
+(Linux); it never reads or writes SavvyCAN's QSettings registry keys.
+
+On macOS the menus live in the global menu bar (Quit is in the WinCAN application menu) and
+shortcuts use Cmd instead of Ctrl (Open ⌘O, Save ⌘S, Connection ⌘K, Zoom ⌘= / ⌘- / ⌘0).
+To build a double-clickable `WinCAN.app` (ad-hoc signed, not notarized):
+
+```bash
+build/macos/package-app.sh            # -> artifacts/macos/WinCAN.app and wincan-osx-arm64.zip
+xattr -dr com.apple.quarantine WinCAN.app   # only needed for a downloaded copy
+```
 
 ## CI and releases
 
 `.github/workflows/build.yml` runs **only when a tag matching `v*` is pushed** — branch pushes
 and pull requests do not build. Pushing a tag builds and tests the commit, publishes
-self-contained **win-x64** (zip) and **linux-x64** (tar.gz) packages and creates the GitHub
+self-contained **win-x64** (zip), **linux-x64** (tar.gz) and **osx-arm64** (`WinCAN.app` in a
+zip) packages and creates the GitHub
 Release for that tag with the generated notes. The tag without its leading `v` is used as the
 assembly/package version:
 

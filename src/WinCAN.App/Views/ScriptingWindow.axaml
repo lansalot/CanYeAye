@@ -36,7 +36,7 @@
         <TextBox Grid.Row="0"
                  Text="{Binding SelectedScript.EditorText, Mode=TwoWay}"
                  AcceptsReturn="True" AcceptsTab="True"
-                 FontFamily="Consolas,Courier New,monospace"
+                 FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace"
                  TextWrapping="NoWrap"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                  ScrollViewer.HorizontalScrollBarVisibility="Auto" />
@@ -54,7 +54,7 @@
         <Grid Grid.Row="2" RowDefinitions="Auto,*">
           <TextBlock Grid.Row="0" Text="Log" FontWeight="Bold" Margin="4" />
           <ListBox Grid.Row="1" ItemsSource="{Binding SelectedScript.Logs}"
-                   FontFamily="Consolas,Courier New,monospace" FontSize="11">
+                   FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" FontSize="11">
             <ListBox.ItemTemplate>
               <DataTemplate>
                 <TextBlock Text="{Binding}" />
