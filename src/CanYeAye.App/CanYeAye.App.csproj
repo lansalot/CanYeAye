@@ -3,10 +3,10 @@
     <OutputType>WinExe</OutputType>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <RootNamespace>CanYeAye.App</RootNamespace>
-    <ApplicationIcon>canbus.ico</ApplicationIcon>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="canbus.ico" />
+    <Content Include="app.ico" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
