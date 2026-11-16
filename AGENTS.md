@@ -136,7 +136,9 @@ fails the gate produces no build, package or release.
   (SavvyCAN grammar with fault list), `DbcFileWriter` (byte-stable save incl. CAN FD
   `VFrameFormat`/`CANFD_BRS` sync) and `DbcDatabase` (multi-file lookup, J1939/GMLAN).
   Validated against SavvyCAN's `examples/*.dbc` and the 17 real files in `DBCsamples`
-  (copied to `tests/CanYeAye.Tests/Fixtures/DbcSamples`).
+  (copied to `tests/CanYeAye.Tests/Fixtures/DbcSamples`); both folders are git-ignored, so
+  `DbcSampleValidationTests` only exercises whatever is present locally and is a no-op in a
+  fresh clone or on CI.
 - `CanYeAye.Core.Protocols`: ISO-TP transport (`IsoTpHandler`, single/multi-frame, flow control,
   segmented TX), UDS (`UdsHandler`) and OBD-II (full Mode 01 PID table, `Obd2Dbc` generator,
   `Obd2Poller`). `CanYeAye.Core.Scripting.ScriptHost` runs SavvyCAN `.js` files on Jint with the

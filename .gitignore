@@ -17,6 +17,11 @@ coverage*.xml
 Thumbs.db
 .DS_Store
 
+# Third-party DBC samples: kept on disk but never committed (DBCsamples/ is the working set,
+# the test copy is what DbcSampleValidationTests reads when it is present).
+DBCsamples/
+tests/CanYeAye.Tests/Fixtures/DbcSamples/
+
 # Local run data
 *.log
 !tests/**/Fixtures/**/*.log

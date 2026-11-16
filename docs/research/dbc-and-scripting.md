@@ -896,7 +896,7 @@ then split on `,`:
 | 13 | `ProcessAsText` does not bounds-check ints/floats | Return `false` consistently and never read outside the payload. |
 | 14 | No escaping of `"` in comments, units or enum text | Keep unescaped for byte-identical output; treat round trips of such files as best effort and log a warning. |
 | 15 | `DBCFile` copy ctor/assignment are broken (shares the message handler, shallow-copies nodes) | Do not port; deep clone or make files immutable-by-convention and never copy. |
-| 16 | Message/signal names must match `[-\w]+`, so real files containing `(`, `)` or `?` lose those entries | Accept any non-space, non-colon name; validated against 17 real DBCs in `DBCsamples` |
+| 16 | Message/signal names must match `[-\w]+`, so real files containing `(`, `)` or `?` lose those entries | Accept any non-space, non-colon name; validated locally against 17 real DBCs in `DBCsamples` (git-ignored, not committed) |
 | 17 | `BA_DEF_` bounds match `(\d+)` only, so FLOAT bounds and 7-digit INT bounds break the round trip | Parse bounds as full numeric tokens and print INT bounds as integers |
 | 18 | BA_/VAL_/CM_/SIG_VALTYPE_/SG_MUL_VAL_ message ids are written with bit 31 but masked on load (`& 0x1FFFFFFF`) | Same masking on load, otherwise extended-message attributes/comments/values are dropped on re-read |
 
