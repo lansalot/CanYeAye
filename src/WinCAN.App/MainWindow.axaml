@@ -45,7 +45,8 @@
         <MenuItem Header="Send _Frame..." Click="OnSendFrameClick" />
         <MenuItem Header="_Scripting..." Click="OnScriptingClick" />
         <MenuItem Header="_OBD-II..." Click="OnObd2Click" />
-        <MenuItem Header="_Sniffer..." Click="OnSnifferClick" />
+        <MenuItem Header="S_niffer..." Click="OnSnifferClick" />
+        <MenuItem Header="_Node Graph..." Click="OnNodeGraphClick" />
       </MenuItem>
     </Menu>
 

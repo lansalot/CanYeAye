@@ -30,6 +30,11 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
 
     private static readonly FilePickerFileType AllFiles = new("All files") { Patterns = ["*"] };
 
+    private static readonly FilePickerFileType NodeNameFiles = new("J1939 node names")
+    {
+        Patterns = ["*.txt", "*.TXT", "*.nodes", "*.NODES"],
+    };
+
     public async Task<string?> PickOpenLogAsync()
     {
         var storage = topLevel()?.StorageProvider;
@@ -138,8 +143,44 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
         return file?.TryGetLocalPath();
     }
 
-    public async Task ShowMessageAsync(string title, string message)
+    public async Task<string?> PickOpenNodeNamesAsync()
     {
+        var storage = topLevel()?.StorageProvider;
+        if (storage is null)
+        {
+            return null;
+        }
+
+        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open J1939 node names",
+            AllowMultiple = false,
+            FileTypeFilter = [NodeNameFiles, AllFiles],
+        });
+
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
+
+    public async Task<string?> PickSaveNodeNamesAsync(string suggestedName)
+    {
+        var storage = topLevel()?.StorageProvider;
+        if (storage is null)
+        {
+            return null;
+        }
+
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save J1939 node names",
+            SuggestedFileName = suggestedName,
+            DefaultExtension = "txt",
+            FileTypeChoices = [NodeNameFiles, AllFiles],
+        });
+
+        return file?.TryGetLocalPath();
+    }
+
+    public async Task ShowMessageAsync(string title, string message)    {
         var window = new Window
         {
             Title = title,

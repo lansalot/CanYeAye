@@ -23,6 +23,10 @@
       <Setter Property="Padding" Value="0" />
       <Setter Property="Margin" Value="0" />
     </Style>
+    <Style Selector="ListBox#NodeList ListBoxItem">
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="2,1" />
+    </Style>
   </Window.Styles>
   <DockPanel>
     <Border DockPanel.Dock="Top" Padding="6" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
@@ -38,21 +42,53 @@
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
       <Grid ColumnDefinitions="Auto,Auto,*">
         <Button Grid.Column="0" Content="All" Command="{Binding FilterAllCommand}" Width="80" Margin="0,0,8,0" />
-        <Button Grid.Column="1" Content="None" Command="{Binding FilterNoneCommand}" Width="80" Margin="0,0,12,0" />
+        <Button Grid.Column="1" Content="None" Command="{Binding FilterNoneCommand}" Width="80" Margin="0,0,8,0" />
         <TextBlock Grid.Column="2" Text="{Binding FilterSummary}" VerticalAlignment="Center" FontSize="11" />
       </Grid>
     </Border>
 
-    <DockPanel Margin="6">
-      <TextBox DockPanel.Dock="Top" PlaceholderText="Filter IDs." Text="{Binding FilterSearch, Mode=TwoWay}"
-               Margin="0,0,0,6" />
-      <ListBox x:Name="IdFilterList" ItemsSource="{Binding FrameFilters}">
-        <ListBox.ItemTemplate>
-          <DataTemplate>
-            <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
-    </DockPanel>
+    <TabControl Margin="6">
+      <TabItem Header="Frame IDs">
+        <DockPanel>
+          <TextBox DockPanel.Dock="Top" PlaceholderText="Filter IDs." Text="{Binding FilterSearch, Mode=TwoWay}"
+                   Margin="0,0,0,6" />
+          <ListBox x:Name="IdFilterList" ItemsSource="{Binding FrameFilters}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="J1939 Nodes">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,6">
+            <TextBlock Text="Name the J1939 source addresses and include/exclude a whole node. Names also label the node graph."
+                       TextWrapping="Wrap" FontSize="11" Opacity="0.8" />
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button Content="All" Command="{Binding SourceFilterAllCommand}" FontSize="11" Padding="8,3" />
+              <Button Content="None" Command="{Binding SourceFilterNoneCommand}" FontSize="11" Padding="8,3" />
+              <Button Content="Load..." Command="{Binding LoadNodeNamesCommand}" FontSize="11" Padding="8,3" />
+              <Button Content="Save..." Command="{Binding SaveNodeNamesCommand}" FontSize="11" Padding="8,3" />
+            </StackPanel>
+          </StackPanel>
+          <ListBox x:Name="NodeList" ItemsSource="{Binding NodeNameItems}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="Auto,58,*" ColumnSpacing="6">
+                  <CheckBox Grid.Column="0" IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                            ToolTip.Tip="Show or hide every frame sent by this node." />
+                  <TextBlock Grid.Column="1" Text="{Binding AddressText}" VerticalAlignment="Center"
+                             FontFamily="Consolas,Courier New,monospace" />
+                  <TextBox Grid.Column="2" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="Name" FontSize="12" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
   </DockPanel>
 </Window>

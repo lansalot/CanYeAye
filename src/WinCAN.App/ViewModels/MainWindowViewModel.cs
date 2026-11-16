@@ -8,10 +8,12 @@ using WinCAN.App.Services;
 using WinCAN.Connections;
 using WinCAN.Connections.Transports;
 using WinCAN.Core;
+using WinCAN.Core.Analysis;
 using WinCAN.Core.Dbc;
 using WinCAN.Core.FileFormats;
 using WinCAN.Core.Formatting;
 using WinCAN.Core.Logging;
+using WinCAN.Core.Protocols;
 
 namespace WinCAN.App.ViewModels;
 
@@ -55,6 +57,8 @@ public partial class MainWindowViewModel : ObservableObject
         ConnectionManager.ConnectionsChanged += (_, _) =>
             Dispatcher.UIThread.Post(() => OnPropertyChanged(nameof(BusSummary)));
 
+        NodeNames.Changed += (_, _) => SyncNodeNameItems();
+
         _flushTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
         _flushTimer.Tick += (_, _) => FlushPendingFrames();
         _flushTimer.Start();
@@ -81,6 +85,36 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<FrameFilterItem> FrameFilters { get; } = [];
 
     public ObservableCollection<BusFilterItem> BusFilters { get; } = [];
+
+    /// <summary>User-assigned J1939 source/node names (also shown in the filter list and graph).</summary>
+    public J1939NodeNames NodeNames { get; } = new();
+
+    /// <summary>Editable node-name rows for the filter window.</summary>
+    public ObservableCollection<NodeNameItem> NodeNameItems { get; } = [];
+
+    private readonly Dictionary<int, NodeNameItem> _nodeNameItems = [];
+    private readonly Dictionary<int, bool> _sourceFilters = [];
+    private bool _suppressSourceRebuild;
+
+    /// <summary>Snapshot of the capture (loaded log or live frames) for analysis windows.</summary>
+    public IReadOnlyList<CanFrame> FrameSnapshot() => _store.Snapshot();
+
+    /// <summary>Saved node positions for the J1939 node graph.</summary>
+    public List<WinCAN.Core.Settings.NodeGraphPosition> NodeGraphLayout { get; set; } = [];
+
+    public double NodeGraphZoom { get; set; } = 1.0;
+
+    public double NodeGraphPanX { get; set; }
+
+    public double NodeGraphPanY { get; set; }
+
+    public double NodeGraphWindowWidth { get; set; } = 1050;
+
+    public double NodeGraphWindowHeight { get; set; } = 720;
+
+    public int NodeGraphWindowX { get; set; } = int.MinValue;
+
+    public int NodeGraphWindowY { get; set; } = int.MinValue;
 
     /// <summary>Raised when the view should scroll to the newest frame (auto-scroll).</summary>
     public event EventHandler? ScrollToEndRequested;
@@ -433,8 +467,66 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task SaveLogAsync()
+    private async Task SaveNodeNamesAsync()
     {
+        if (FileDialogs is null)
+        {
+            return;
+        }
+
+        var path = await FileDialogs.PickSaveNodeNamesAsync("j1939-nodes.txt");
+        if (string.IsNullOrEmpty(path))
+        {
+            return;
+        }
+
+        try
+        {
+            NodeNames.Save(path);
+            StatusText = $"Saved {NodeNames.Count} node names to {Path.GetFileName(path)}";
+            LogBus.Info(StatusText);
+        }
+        catch (Exception ex)
+        {
+            StatusText = "Save failed";
+            LogBus.Error(ex.Message);
+            await ShowMessageAsync("Save failed", ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task LoadNodeNamesAsync()
+    {
+        if (FileDialogs is null)
+        {
+            return;
+        }
+
+        var path = await FileDialogs.PickOpenNodeNamesAsync();
+        if (string.IsNullOrEmpty(path))
+        {
+            return;
+        }
+
+        if (!NodeNames.Load(path))
+        {
+            await ShowMessageAsync("Load failed", "Could not read the node names file.");
+            return;
+        }
+
+        SyncNodeNameItems();
+        foreach (var item in NodeNameItems)
+        {
+            item.Name = NodeNames[item.Address] ?? string.Empty;
+        }
+
+        RefreshFilterLabels();
+        StatusText = $"Loaded {NodeNames.Count} node names from {Path.GetFileName(path)}";
+        LogBus.Info(StatusText);
+    }
+
+    [RelayCommand]
+    private async Task SaveLogAsync()    {
         if (FileDialogs is null || Frames.Count == 0)
         {
             return;
@@ -560,6 +652,7 @@ public partial class MainWindowViewModel : ObservableObject
         _allBusFilters.Clear();
         FrameFilters.Clear();
         BusFilters.Clear();
+        ResetSourceFilters();
         FilterSearch = string.Empty;
         UpdateFilterSummary();
     }
@@ -945,6 +1038,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void RegisterFilterEntries(CanFrame frame)
     {
+        RegisterNodeName(frame);
+
         if (!_idFilters.ContainsKey(frame.FrameId))
         {
             _idFilters[frame.FrameId] = true;
@@ -974,6 +1069,13 @@ public partial class MainWindowViewModel : ObservableObject
 
     private bool PassesFilters(CanFrame frame)
     {
+        if (frame.IsExtended &&
+            _sourceFilters.TryGetValue((int)(frame.FrameId & 0xFF), out var sourceVisible) &&
+            !sourceVisible)
+        {
+            return false;
+        }
+
         if (!_idFilters.TryGetValue(frame.FrameId, out var idVisible) || !idVisible)
         {
             return false;
@@ -1033,6 +1135,15 @@ public partial class MainWindowViewModel : ObservableObject
     private string BuildFilterLabel(uint id, bool extended)
     {
         var label = "0x" + CanIdParser.FormatId(id, extended);
+        if (extended)
+        {
+            var sourceName = NodeNames[(int)(id & 0xFF)];
+            if (!string.IsNullOrEmpty(sourceName))
+            {
+                label += " [" + sourceName + "]";
+            }
+        }
+
         if (InterpretFrames)
         {
             var message = Dbc.FindMessage(id);
@@ -1043,6 +1154,115 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         return label;
+    }
+
+    private void RegisterNodeName(CanFrame frame)
+    {
+        if (!frame.IsExtended)
+        {
+            return;
+        }
+
+        var source = (int)(frame.FrameId & 0xFF);
+        if (_nodeNameItems.ContainsKey(source))
+        {
+            return;
+        }
+
+        InsertNodeNameItem(source);
+    }
+
+    /// <summary>Creates/updates the editable rows for names restored from settings or a file.</summary>
+    public void SyncNodeNameItems()
+    {
+        foreach (var address in NodeNames.Snapshot().Keys)
+        {
+            if (!_nodeNameItems.ContainsKey(address))
+            {
+                InsertNodeNameItem(address);
+            }
+        }
+
+        foreach (var item in NodeNameItems)
+        {
+            var name = NodeNames[item.Address] ?? string.Empty;
+            if (!string.Equals(item.Name, name, StringComparison.Ordinal))
+            {
+                item.Name = name;
+            }
+        }
+    }
+
+    private void InsertNodeNameItem(int address)
+    {
+        var item = new NodeNameItem(address, NodeNames[address], OnNodeNameChanged, OnSourceFilterChanged);
+        _nodeNameItems[address] = item;
+        _sourceFilters[address] = true;
+        var index = 0;
+        while (index < NodeNameItems.Count && NodeNameItems[index].Address < address)
+        {
+            index++;
+        }
+
+        NodeNameItems.Insert(index, item);
+    }
+
+    private void OnNodeNameChanged(int address, string? name)
+    {
+        NodeNames.SetName(address, name);
+        RefreshFilterLabels();
+    }
+
+    private void OnSourceFilterChanged(NodeNameItem item)
+    {
+        _sourceFilters[item.Address] = item.IsChecked;
+        if (!_suppressSourceRebuild)
+        {
+            RebuildDisplay();
+        }
+    }
+
+    [RelayCommand]
+    private void SourceFilterAll() => SetAllSourceFilters(true);
+
+    [RelayCommand]
+    private void SourceFilterNone() => SetAllSourceFilters(false);
+
+    private void SetAllSourceFilters(bool checkedState)
+    {
+        _suppressSourceRebuild = true;
+        try
+        {
+            foreach (var item in NodeNameItems)
+            {
+                item.IsChecked = checkedState;
+                _sourceFilters[item.Address] = checkedState;
+            }
+        }
+        finally
+        {
+            _suppressSourceRebuild = false;
+        }
+
+        RebuildDisplay();
+    }
+
+    private void ResetSourceFilters()
+    {
+        _suppressSourceRebuild = true;
+        try
+        {
+            foreach (var item in NodeNameItems)
+            {
+                item.IsChecked = true;
+            }
+        }
+        finally
+        {
+            _suppressSourceRebuild = false;
+        }
+
+        _sourceFilters.Clear();
     }
 
     private void RefreshFilterLabels()

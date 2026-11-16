@@ -116,15 +116,37 @@ dotnet test --filter FullyQualifiedName~FileFormats
 - `WinCAN.App` (Avalonia): main window with the SavvyCAN right-hand frame panel (total/FPS,
   suspend, normalize, clear, keep-filters, auto-scroll, overwrite mode with counts, interpret
   frames, expand/collapse, bus filtering), reorderable/hideable grid columns (incl. ASCII),
-  in-row DBC interpretation, status bar, and 10%-step UI scaling (View menu). Connection
-  dialog, non-modal send-frame window, DBC manager (multi-file load/remove/reorder), log-loading
+  in-row DBC interpretation, zebra-striped rows, vertically centred Data cells, status bar, and
+  10%-step UI scaling (View menu). Connection dialog split by connection type (GVRET serial/TCP,
+  Lawicel, QT SerialBus placeholder, socketcand, MQTT, CANserver, CANlogserver); GVRET TCP uses
+  port 23 and the CAN bus speed is a drop-down of standard speeds, persisted in settings.
+  Non-modal send-frame window, DBC manager (multi-file load/remove/reorder), log-loading
   progress dialog, scripting window, OBD-II poller window, sniffer window, and a compact
   dockable floating frame-filter window whose labels include DBC message names when interpret
-  frames is on. Layout (position, columns, toggles, scale, loaded DBCs) persists across restarts.
-  `dotnet run -- <log> [dbc...]` opens files at startup. Verified with screen captures, including
-  a 324k-frame load.
+  frames is on. Loading a new log resets the ID/bus/source filters. Layout (position, columns,
+  toggles, scale, loaded DBCs) persists across restarts. `dotnet run -- <log> [dbc...]` opens
+  files at startup. Verified with screen captures, including a 324k-frame load.
+- Sniffer (parity with `re/sniffer`): custom-drawn grid with Delta / Frequency / ID / byte
+  columns, changed-byte green/red colouring, notching (per notch interval), mute notched bits,
+  byte fading, bit view, configurable expire interval and a minimum-rate (Hz) filter that hides
+  IDs while their observed rate is below the threshold. Header stays fixed while scrolling.
+- J1939 node analysis (WinCAN original, no SavvyCAN equivalent): `WinCAN.Core.Analysis`
+  (`J1939NodeNames` with load/save file and settings persistence, `NodeTraffic` per source /
+  conversation / broadcast). The Frame Filtering window has a `J1939 Nodes` tab (names,
+  per-source include/exclude with All/None, Load/Save) and a Node Graph window
+  (Tools → Node Graph…) showing live or captured traffic: nodes sized by involvement,
+  bidirectional edges weighted by volume, broadcast bar, hover details/top talkers, drag,
+  wheel/pinch zoom, pan, long-press/double-click node naming. Node positions, zoom/pan and
+  window geometry persist. Design notes: `docs/research/j1939-node-analysis.md`.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
+
+### Next session
+
+- Verify the node graph's pinch-zoom and long-press naming on a real touchscreen (the control
+  tracks touch pointers manually).
+- Optional graph follow-ups: time-window filtering for live traffic, PNG export, per-conversation
+  hover readout, node-size legend.
 
 
 Avalonia + vendor SDKs: PCAN-Basic / Vector XL DLLs are runtime-only dependencies on Windows;

@@ -50,3 +50,36 @@ public partial class BusFilterItem : ObservableObject
 
     partial void OnIsCheckedChanged(bool value) => _changed(this);
 }
+
+/// <summary>Editable name for a J1939 source address (node); checkbox includes/excludes it.</summary>
+public partial class NodeNameItem : ObservableObject
+{
+    private readonly Action<int, string?> _applyName;
+    private readonly Action<NodeNameItem> _filterChanged;
+
+    public NodeNameItem(
+        int address,
+        string? name,
+        Action<int, string?> applyName,
+        Action<NodeNameItem> filterChanged)
+    {
+        Address = address;
+        _name = name ?? string.Empty;
+        _applyName = applyName;
+        _filterChanged = filterChanged;
+    }
+
+    public int Address { get; }
+
+    public string AddressText => WinCAN.Core.Analysis.J1939NodeNames.FormatAddress(Address);
+
+    [ObservableProperty]
+    private string _name;
+
+    [ObservableProperty]
+    private bool _isChecked = true;
+
+    partial void OnNameChanged(string value) => _applyName(Address, value);
+
+    partial void OnIsCheckedChanged(bool value) => _filterChanged(this);
+}

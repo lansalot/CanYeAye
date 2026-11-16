@@ -61,6 +61,22 @@ public partial class MainWindow : Window
             _viewModel.LoadDbcFile(dbcPath);
         }
 
+        foreach (var node in _settings.NodeNames)
+        {
+            _viewModel.NodeNames.SetName(node.Address, node.Name);
+        }
+
+        _viewModel.SyncNodeNameItems();
+
+        _viewModel.NodeGraphLayout = _settings.NodeGraphLayout;
+        _viewModel.NodeGraphZoom = _settings.NodeGraphZoom;
+        _viewModel.NodeGraphPanX = _settings.NodeGraphPanX;
+        _viewModel.NodeGraphPanY = _settings.NodeGraphPanY;
+        _viewModel.NodeGraphWindowWidth = _settings.NodeGraphWindowWidth;
+        _viewModel.NodeGraphWindowHeight = _settings.NodeGraphWindowHeight;
+        _viewModel.NodeGraphWindowX = _settings.NodeGraphWindowX;
+        _viewModel.NodeGraphWindowY = _settings.NodeGraphWindowY;
+
         DataContext = _viewModel;
         BuildSaveFormatMenu();
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -126,6 +142,18 @@ public partial class MainWindow : Window
                 GvretTcpPort = _viewModel.GvretTcpPort,
                 MqttPort = _viewModel.MqttPort,
                 CanLogServerPort = _viewModel.CanLogServerPort,
+                NodeNames = _viewModel.NodeNames.Snapshot()
+                    .OrderBy(pair => pair.Key)
+                    .Select(pair => new WinCAN.Core.Settings.NodeNameEntry(pair.Key, pair.Value))
+                    .ToList(),
+                NodeGraphLayout = _viewModel.NodeGraphLayout,
+                NodeGraphZoom = _viewModel.NodeGraphZoom,
+                NodeGraphPanX = _viewModel.NodeGraphPanX,
+                NodeGraphPanY = _viewModel.NodeGraphPanY,
+                NodeGraphWindowWidth = _viewModel.NodeGraphWindowWidth,
+                NodeGraphWindowHeight = _viewModel.NodeGraphWindowHeight,
+                NodeGraphWindowX = _viewModel.NodeGraphWindowX,
+                NodeGraphWindowY = _viewModel.NodeGraphWindowY,
             });
         }
         catch
@@ -330,6 +358,44 @@ public partial class MainWindow : Window
     {
         var viewModel = new SnifferWindowViewModel(_viewModel.ConnectionManager);
         new Views.SnifferWindow(viewModel).Show(this);
+    }
+
+    private void OnNodeGraphClick(object? sender, RoutedEventArgs e)
+    {
+        var viewModel = new NodeGraphViewModel(
+            _viewModel.NodeNames,
+            _viewModel.FrameSnapshot,
+            _viewModel.ConnectionManager);
+        var window = new Views.NodeGraphWindow(viewModel);
+        window.ApplyLayout(_viewModel.NodeGraphLayout);
+        window.ApplyView(_viewModel.NodeGraphZoom, _viewModel.NodeGraphPanX, _viewModel.NodeGraphPanY);
+
+        if (_viewModel.NodeGraphWindowWidth > 0)
+        {
+            window.Width = _viewModel.NodeGraphWindowWidth;
+            window.Height = _viewModel.NodeGraphWindowHeight;
+        }
+
+        if (_viewModel.NodeGraphWindowX != int.MinValue && _viewModel.NodeGraphWindowY != int.MinValue)
+        {
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Position = new PixelPoint(_viewModel.NodeGraphWindowX, _viewModel.NodeGraphWindowY);
+        }
+
+        window.Closed += (_, _) =>
+        {
+            _viewModel.NodeGraphLayout = window.CaptureLayout().ToList();
+            var view = window.CaptureView();
+            _viewModel.NodeGraphZoom = view.Zoom;
+            _viewModel.NodeGraphPanX = view.PanX;
+            _viewModel.NodeGraphPanY = view.PanY;
+            _viewModel.NodeGraphWindowWidth = window.Width;
+            _viewModel.NodeGraphWindowHeight = window.Height;
+            _viewModel.NodeGraphWindowX = window.Position.X;
+            _viewModel.NodeGraphWindowY = window.Position.Y;
+        };
+
+        window.Show(this);
     }
 
     private void OnToggleColumnClick(object? sender, RoutedEventArgs e)

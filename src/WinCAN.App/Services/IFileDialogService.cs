@@ -15,5 +15,9 @@ public interface IFileDialogService
 
     Task<string?> PickSaveScriptAsync(string suggestedName);
 
+    Task<string?> PickOpenNodeNamesAsync();
+
+    Task<string?> PickSaveNodeNamesAsync(string suggestedName);
+
     Task ShowMessageAsync(string title, string message);
 }
