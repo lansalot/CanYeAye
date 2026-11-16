@@ -86,7 +86,10 @@
                             ToolTip.Tip="Check/uncheck every ID of this node on the Frame IDs tab." />
                   <TextBlock Grid.Column="1" Text="{Binding AddressText}" VerticalAlignment="Center"
                              FontFamily="Consolas,Courier New,monospace" />
-                  <TextBox Grid.Column="2" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="Name" FontSize="12" />
+                  <TextBox Grid.Column="2" Text="{Binding Name, Mode=TwoWay}" PlaceholderText="Name" FontSize="12"
+                           IsVisible="{Binding IsEditable}" />
+                  <TextBlock Grid.Column="2" Text="All broadcast traffic" VerticalAlignment="Center"
+                             FontSize="11" Opacity="0.7" IsVisible="{Binding !IsBroadcast}" />
                 </Grid>
               </DataTemplate>
             </ListBox.ItemTemplate>

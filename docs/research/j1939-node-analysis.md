@@ -12,11 +12,12 @@ PS for PDU1, `IsBroadcast` for PDU2).
   - `Frame IDs` — the per-ID include/exclude list (unchanged; the single source of truth for
     which frames are displayed).
   - `J1939 Nodes` — one row per source address seen in the capture (plus any named source
-    restored from settings). Each row has:
-    - an editable name (`0x02` → `ABS`),
+    restored from settings) and a leading **Broadcast** pseudo-row:
+    - an editable name (`0x02` → `ABS`) for real nodes; the Broadcast row is not nameable,
     - a check box that **only selects/clears all IDs of that node on the `Frame IDs` tab**
       (it is a bulk shortcut, not a second filter layer). Mixed ID selections show a dash
-      (`IsThreeState`),
+      (`IsThreeState`); the Broadcast row covers every broadcast destination (PDU2 or PDU1 to
+      `0xFF`) so all broadcast traffic can be hidden in one click,
     - `All` / `None` for the whole node list,
     - `Load...` / `Save...` for a standalone node-names file.
 - Names are also stored in WinCAN settings (`AppSettings.NodeNames`) so they survive restarts
@@ -55,7 +56,7 @@ Shows J1939 **sources as nodes** and **conversations as edges**.
 - **Nodes**: circle radius grows with sent+received involvement; label is the node name or
   `0xNN` (address is always drawn inside the circle).
 - **Hover** a node for a card with sent/received counts and its three heaviest partners;
-  the footer lists the top talkers.
+  the footer lists the top talkers as `Name (0xNN): frames` (address only when unnamed).
 - **Interaction** (touch/tablet friendly):
   - drag a node to move it,
   - drag empty space to pan (grab),

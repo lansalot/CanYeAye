@@ -303,7 +303,13 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         var talkers = orderedNodes
             .OrderByDescending(node => node.Involvement)
             .Take(4)
-            .Select(node => $"{node.Label} ({node.Involvement:N0})");
+            .Select(node =>
+            {
+                var address = J1939NodeNames.FormatAddress(node.Address);
+                return string.Equals(node.Label, address, StringComparison.Ordinal)
+                    ? $"{address}: {node.Involvement:N0}"
+                    : $"{node.Label} ({address}): {node.Involvement:N0}";
+            });
         TopTalkers = orderedNodes.Count == 0
             ? string.Empty
             : "Top talkers: " + string.Join("  ·  ", talkers);

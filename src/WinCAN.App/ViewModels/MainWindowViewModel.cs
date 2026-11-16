@@ -104,6 +104,7 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<NodeNameItem> NodeNameItems { get; } = [];
 
     private readonly Dictionary<int, NodeNameItem> _nodeNameItems = [];
+    private NodeNameItem? _broadcastNode;
     private bool _suppressNodeSelection;
 
     /// <summary>Snapshot of the capture (loaded log or live frames) for analysis windows.</summary>
@@ -1059,11 +1060,18 @@ public partial class MainWindowViewModel : ObservableObject
         {
             // A new ID of a node that the user has deselected starts hidden too.
             var visible = true;
-            if (frame.IsExtended &&
-                _nodeNameItems.TryGetValue((int)(frame.FrameId & 0xFF), out var node) &&
-                node.IsChecked == false)
+            if (frame.IsExtended)
             {
-                visible = false;
+                if (_nodeNameItems.TryGetValue((int)(frame.FrameId & 0xFF), out var node) &&
+                    node.IsChecked == false)
+                {
+                    visible = false;
+                }
+
+                if (IsBroadcastId(frame.FrameId) && _broadcastNode is { IsChecked: false })
+                {
+                    visible = false;
+                }
             }
 
             _idFilters[frame.FrameId] = visible;
@@ -1183,8 +1191,37 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        // Any J1939 traffic gets the pseudo-node that covers all broadcast destinations.
+        EnsureBroadcastItem();
         var id = J1939Id.Decode(frame.FrameId);
         EnsureNodeItem(id.Source);
+    }
+
+    private void EnsureBroadcastItem()
+    {
+        if (_broadcastNode is not null)
+        {
+            return;
+        }
+
+        _broadcastNode = new NodeNameItem(
+            NodeNameItem.BroadcastAddress,
+            null,
+            IgnoreNodeName,
+            OnNodeSelectionChanged,
+            isBroadcast: true);
+        NodeNameItems.Insert(0, _broadcastNode);
+    }
+
+    private static void IgnoreNodeName(int address, string? name)
+    {
+        // The Broadcast row is not a nameable node.
+    }
+
+    private static bool IsBroadcastId(uint id)
+    {
+        var j1939 = J1939Id.Decode(id);
+        return j1939.IsBroadcast || j1939.Destination == 0xFF;
     }
 
     private void EnsureNodeItem(int address)
@@ -1208,6 +1245,11 @@ public partial class MainWindowViewModel : ObservableObject
 
         foreach (var item in NodeNameItems)
         {
+            if (item.IsBroadcast)
+            {
+                continue;
+            }
+
             var name = NodeNames[item.Address] ?? string.Empty;
             if (!string.Equals(item.Name, name, StringComparison.Ordinal))
             {
@@ -1262,12 +1304,17 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ApplyNodeSelection(int address, bool selected)
     {
+        var broadcast = address == NodeNameItem.BroadcastAddress;
         _suppressFilterRebuild = true;
         try
         {
             foreach (var filter in _allFrameFilters)
             {
-                if (!filter.Extended || (int)(filter.Id & 0xFF) != address || filter.IsChecked == selected)
+                var matches = filter.Extended &&
+                    (broadcast
+                        ? IsBroadcastId(filter.Id)
+                        : (int)(filter.Id & 0xFF) == address);
+                if (!matches || filter.IsChecked == selected)
                 {
                     continue;
                 }
@@ -1329,7 +1376,11 @@ public partial class MainWindowViewModel : ObservableObject
                 var selected = 0;
                 foreach (var filter in _allFrameFilters)
                 {
-                    if (!filter.Extended || (int)(filter.Id & 0xFF) != node.Address)
+                    var matches = filter.Extended &&
+                        (node.IsBroadcast
+                            ? IsBroadcastId(filter.Id)
+                            : (int)(filter.Id & 0xFF) == node.Address);
+                    if (!matches)
                     {
                         continue;
                     }

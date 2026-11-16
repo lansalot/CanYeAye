@@ -60,12 +60,21 @@ public partial class BusFilterItem : ObservableObject
 /// <summary>Editable name for a J1939 source address; its checkbox selects the node's IDs.</summary>
 public partial class NodeNameItem : ObservableObject
 {
+    /// <summary>Pseudo address used by the Broadcast row (all broadcast destinations).</summary>
+    public const int BroadcastAddress = -1;
+
     private readonly Action<int, string?> _applyName;
     private readonly Action<NodeNameItem> _selectionChanged;
 
-    public NodeNameItem(int address, string? name, Action<int, string?> applyName, Action<NodeNameItem> selectionChanged)
+    public NodeNameItem(
+        int address,
+        string? name,
+        Action<int, string?> applyName,
+        Action<NodeNameItem> selectionChanged,
+        bool isBroadcast = false)
     {
         Address = address;
+        IsBroadcast = isBroadcast;
         _name = name ?? string.Empty;
         _applyName = applyName;
         _selectionChanged = selectionChanged;
@@ -73,7 +82,14 @@ public partial class NodeNameItem : ObservableObject
 
     public int Address { get; }
 
-    public string AddressText => WinCAN.Core.Analysis.J1939NodeNames.FormatAddress(Address);
+    /// <summary>True for the special row that covers every broadcast destination.</summary>
+    public bool IsBroadcast { get; }
+
+    public bool IsEditable => !IsBroadcast;
+
+    public string AddressText => IsBroadcast
+        ? "Broadcast"
+        : WinCAN.Core.Analysis.J1939NodeNames.FormatAddress(Address);
 
     [ObservableProperty]
     private string _name;
