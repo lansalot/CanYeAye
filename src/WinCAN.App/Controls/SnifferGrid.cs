@@ -42,8 +42,9 @@ public sealed class SnifferGrid : Control
     private static readonly IBrush DecreaseBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xC0, 0x39, 0x2B));
     private static readonly IBrush NotchBrush = new SolidColorBrush(Color.FromArgb(0x88, 0x80, 0x80, 0x80));
     private static readonly IBrush StaleIdBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0x5A, 0x5A));
-    private static readonly IBrush BitBorderBrush = new SolidColorBrush(Color.FromArgb(0x55, 0x80, 0x80, 0x80));
-    private static readonly IPen BitPen = new Pen(BitBorderBrush, 1);
+    private static readonly IBrush BitOneBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0xCC, 0x71));
+    private static readonly IBrush BitZeroBrush = new SolidColorBrush(Color.FromRgb(0xE7, 0x4C, 0x3C));
+    private static readonly IPen BitOutlinePen = new Pen(Brushes.White, 1);
     private static readonly Typeface DefaultTypeface = new(FontFamily.Default);
 
     private INotifyCollectionChanged? _observed;
@@ -133,7 +134,7 @@ public sealed class SnifferGrid : Control
         var columns = Math.Clamp(MaxBytes, 8, SnifferEntry.MaxBytes);
         var rows = ItemsSource?.Cast<object?>().Count() ?? 0;
         var rowHeight = ShowBits ? SnifferLayout.BitsRowHeight : SnifferLayout.RowHeight;
-        return new Size(SnifferLayout.TotalWidth(columns), rows * rowHeight);
+        return new Size(SnifferLayout.TotalWidth(columns, ShowBits), rows * rowHeight);
     }
 
     public override void Render(DrawingContext context)
@@ -197,7 +198,7 @@ public sealed class SnifferGrid : Control
         for (var i = 0; i < columns; i++)
         {
             var value = entry.Data(i);
-            var x = SnifferLayout.ByteColumnX(i);
+            var x = SnifferLayout.ByteColumnX(i, ShowBits);
             if (value < 0)
             {
                 continue;
@@ -216,7 +217,7 @@ public sealed class SnifferGrid : Control
                     var brush = change == SnifferByteChange.Increased ? IncreaseBrush : DecreaseBrush;
                     context.FillRectangle(
                         brush,
-                        new Rect(x, y + 1, SnifferLayout.ByteWidth, rowHeight - 2));
+                        new Rect(x, y + 1, SnifferLayout.ColumnWidth(ShowBits), rowHeight - 2));
                 }
 
                 using (context.PushOpacity(1 - fade))
@@ -225,7 +226,7 @@ public sealed class SnifferGrid : Control
                         context,
                         value.ToString("X2", CultureInfo.InvariantCulture),
                         x,
-                        SnifferLayout.ByteWidth,
+                        SnifferLayout.ColumnWidth(ShowBits),
                         y,
                         rowHeight,
                         12,
@@ -245,41 +246,24 @@ public sealed class SnifferGrid : Control
         double fade,
         IBrush foreground)
     {
-        var previous = entry.LastData(index);
         var notch = entry.NotchMask(index);
-        var size = Math.Min(10, (SnifferLayout.ByteWidth - 8) / 8);
-        var startX = x + (SnifferLayout.ByteWidth - size * 8) / 2;
+        var size = Math.Floor((SnifferLayout.BitsByteWidth - 10) / 8);
+        var startX = x + (SnifferLayout.BitsByteWidth - size * 8) / 2;
         var top = y + 3;
         for (var bit = 0; bit < 8; bit++)
         {
             var mask = 1 << (7 - bit);
             var isSet = (value & mask) != 0;
-            var changed = previous >= 0 && ((value ^ previous) & mask) != 0;
-            IBrush? fill = null;
-            if ((notch & mask) != 0)
-            {
-                fill = NotchBrush;
-            }
-            else if (changed)
-            {
-                fill = isSet ? IncreaseBrush : DecreaseBrush;
-            }
-            else if (isSet)
-            {
-                fill = foreground;
-            }
-
+            var fill = (notch & mask) != 0
+                ? NotchBrush
+                : isSet
+                    ? BitOneBrush
+                    : BitZeroBrush;
             var rect = new Rect(startX + bit * size, top, size - 1, size - 1);
-            if (fill is not null)
+            using (context.PushOpacity(1 - fade))
             {
-                using (context.PushOpacity(fill == foreground ? 0.75 * (1 - fade) : 1 - fade))
-                {
-                    context.FillRectangle(fill, rect);
-                }
-            }
-            else
-            {
-                context.DrawRectangle(null, BitPen, rect);
+                context.FillRectangle(fill, rect);
+                context.DrawRectangle(null, BitOutlinePen, rect);
             }
         }
 
@@ -289,7 +273,7 @@ public sealed class SnifferGrid : Control
                 context,
                 value.ToString("X2", CultureInfo.InvariantCulture),
                 x,
-                SnifferLayout.ByteWidth,
+                SnifferLayout.BitsByteWidth,
                 y + size + 2,
                 SnifferLayout.BitsRowHeight - size - 2,
                 10,

@@ -70,7 +70,7 @@
         <ScrollViewer Grid.Row="0" x:Name="HeaderScroll"
                       HorizontalScrollBarVisibility="Hidden"
                       VerticalScrollBarVisibility="Disabled">
-          <controls:SnifferHeader MaxBytes="{Binding DataColumnCount}"
+          <controls:SnifferHeader MaxBytes="{Binding DataColumnCount}" ShowBits="{Binding ViewBits}"
                                   Foreground="{DynamicResource SystemBaseHighColor}" />
         </ScrollViewer>
         <ScrollViewer Grid.Row="1" x:Name="GridScroll"

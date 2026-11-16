@@ -110,6 +110,10 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Snapshot of the capture (loaded log or live frames) for analysis windows.</summary>
     public IReadOnlyList<CanFrame> FrameSnapshot() => _store.Snapshot();
 
+    /// <summary>Snapshot of the main ID filters (ID + checked) used to seed the sniffer.</summary>
+    public IReadOnlyList<(uint Id, bool Visible)> FilterStateSnapshot() =>
+        _allFrameFilters.Select(filter => (filter.Id, filter.IsChecked)).ToList();
+
     /// <summary>Saved node positions for the J1939 node graph.</summary>
     public List<WinCAN.Core.Settings.NodeGraphPosition> NodeGraphLayout { get; set; } = [];
 

@@ -35,8 +35,9 @@ a cansniffer-style analysis view and an interactive J1939 node graph.
 
 ### Analysis
 - **Sniffer**: cansniffer-style live view with Delta/Frequency/ID/byte columns, green/red
-  change highlighting, notching, mute-notched, fade-inactive bytes, bit view, expiry and a
-  minimum-rate (Hz) filter.
+  change highlighting, notching, mute-notched, fade-inactive bytes, bit view (green = 1,
+  red = 0 cells with white outlines), expiry and a minimum-rate (Hz) filter. Its ID filters
+  are seeded from the main window when it opens; newly seen IDs appear checked by default.
 - **J1939 node graph** (Tools → Node Graph…): conversations between named source nodes with
   edge thickness proportional to traffic, a broadcast bar, top talkers, hover details, drag
   to rearrange, wheel/pinch zoom and pan, and long-press/double-click node naming. Works from

@@ -509,7 +509,9 @@ public partial class MainWindow : Window
 
     private void OnSnifferClick(object? sender, RoutedEventArgs e)
     {
-        var viewModel = new SnifferWindowViewModel(_viewModel.ConnectionManager);
+        var viewModel = new SnifferWindowViewModel(
+            _viewModel.ConnectionManager,
+            _viewModel.FilterStateSnapshot());
         new Views.SnifferWindow(viewModel).Show(this);
     }
 

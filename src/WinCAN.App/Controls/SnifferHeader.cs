@@ -13,17 +13,28 @@ internal static class SnifferLayout
     public const double FrequencyWidth = 100;
     public const double IdWidth = 90;
     public const double ByteWidth = 46;
+
+    /// <summary>Byte column width in bit view (eight larger bit cells).</summary>
+    public const double BitsByteWidth = 74;
+
     public const double HeaderHeight = 26;
     public const double RowHeight = 22;
-    public const double BitsRowHeight = 40;
+    public const double BitsRowHeight = 48;
 
-    public static double TotalWidth(int columns) =>
-        DeltaWidth + FrequencyWidth + IdWidth + Math.Clamp(columns, 8, SnifferEntry.MaxBytes) * ByteWidth;
+    public static double ColumnWidth(bool showBits) => showBits ? BitsByteWidth : ByteWidth;
 
-    public static double ByteColumnX(int index) =>
-        DeltaWidth + FrequencyWidth + IdWidth + index * ByteWidth;
+    public static double TotalWidth(int columns, bool showBits = false) =>
+        DeltaWidth + FrequencyWidth + IdWidth +
+        Math.Clamp(columns, 8, SnifferEntry.MaxBytes) * ColumnWidth(showBits);
 
-    public static void DrawColumnSeparators(DrawingContext context, int columns, double height)
+    public static double ByteColumnX(int index, bool showBits = false) =>
+        DeltaWidth + FrequencyWidth + IdWidth + index * ColumnWidth(showBits);
+
+    public static void DrawColumnSeparators(
+        DrawingContext context,
+        int columns,
+        double height,
+        bool showBits = false)
     {
         var boundaries = new List<double>
         {
@@ -33,7 +44,7 @@ internal static class SnifferLayout
         };
         for (var i = 1; i <= columns; i++)
         {
-            boundaries.Add(ByteColumnX(i));
+            boundaries.Add(ByteColumnX(i, showBits));
         }
 
         foreach (var x in boundaries)
@@ -51,6 +62,9 @@ public sealed class SnifferHeader : Control
     public static readonly StyledProperty<int> MaxBytesProperty =
         AvaloniaProperty.Register<SnifferHeader, int>(nameof(MaxBytes), 8);
 
+    public static readonly StyledProperty<bool> ShowBitsProperty =
+        AvaloniaProperty.Register<SnifferHeader, bool>(nameof(ShowBits));
+
     public static readonly StyledProperty<IBrush?> ForegroundProperty =
         TextElement.ForegroundProperty.AddOwner<SnifferHeader>();
 
@@ -58,13 +72,19 @@ public sealed class SnifferHeader : Control
 
     static SnifferHeader()
     {
-        AffectsRender<SnifferHeader>(MaxBytesProperty, ForegroundProperty);
+        AffectsRender<SnifferHeader>(MaxBytesProperty, ShowBitsProperty, ForegroundProperty);
     }
 
     public int MaxBytes
     {
         get => GetValue(MaxBytesProperty);
         set => SetValue(MaxBytesProperty, value);
+    }
+
+    public bool ShowBits
+    {
+        get => GetValue(ShowBitsProperty);
+        set => SetValue(ShowBitsProperty, value);
     }
 
     public IBrush? Foreground
@@ -76,7 +96,7 @@ public sealed class SnifferHeader : Control
     protected override Size MeasureOverride(Size availableSize)
     {
         var columns = Math.Clamp(MaxBytes, 8, SnifferEntry.MaxBytes);
-        return new Size(SnifferLayout.TotalWidth(columns), SnifferLayout.HeaderHeight);
+        return new Size(SnifferLayout.TotalWidth(columns, ShowBits), SnifferLayout.HeaderHeight);
     }
 
     public override void Render(DrawingContext context)
@@ -98,16 +118,16 @@ public sealed class SnifferHeader : Control
             DrawCentered(
                 context,
                 i.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                SnifferLayout.ByteColumnX(i),
-                SnifferLayout.ByteWidth,
+                SnifferLayout.ByteColumnX(i, ShowBits),
+                SnifferLayout.ColumnWidth(ShowBits),
                 foreground);
         }
 
-        SnifferLayout.DrawColumnSeparators(context, columns, height);
+        SnifferLayout.DrawColumnSeparators(context, columns, height, ShowBits);
         context.DrawLine(
             SnifferLayout.GridPen,
             new Point(0, height - 0.5),
-            new Point(SnifferLayout.TotalWidth(columns), height - 0.5));
+            new Point(SnifferLayout.TotalWidth(columns, ShowBits), height - 0.5));
     }
 
     private static void DrawCentered(DrawingContext context, string text, double x, double width, IBrush brush)

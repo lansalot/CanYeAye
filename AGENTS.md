@@ -147,8 +147,11 @@ and test.
   load.
 - Sniffer (parity with `re/sniffer`): custom-drawn grid with Delta / Frequency / ID / byte
   columns, changed-byte green/red colouring, notching (per notch interval), mute notched bits,
-  byte fading, bit view, configurable expire interval and a minimum-rate (Hz) filter that hides
-  IDs while their observed rate is below the threshold. Header stays fixed while scrolling.
+  byte fading, bit view (each bit is a larger green=1 / red=0 cell with a white outline),
+  configurable expire interval and a minimum-rate (Hz) filter that hides IDs while their
+  observed rate is below the threshold. Header stays fixed while scrolling; the ID filter list
+  is seeded from the main window's ID filters when it opens, and IDs that arrive later are
+  added checked by default.
 - J1939 node analysis (WinCAN original, no SavvyCAN equivalent): `WinCAN.Core.Analysis`
   (`J1939NodeNames` with load/save file and settings persistence, `NodeTraffic` per source /
   conversation / broadcast). The Frame Filtering window keeps the per-ID list on its

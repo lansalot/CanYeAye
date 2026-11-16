@@ -13,11 +13,12 @@ public partial class SnifferFilterItem : ObservableObject
 {
     private readonly Action<SnifferFilterItem> _changed;
 
-    public SnifferFilterItem(uint id, Action<SnifferFilterItem> changed)
+    public SnifferFilterItem(uint id, Action<SnifferFilterItem> changed, bool isChecked = true)
     {
         Id = id;
         Label = "0x" + id.ToString("X3");
         _changed = changed;
+        _isChecked = isChecked;
     }
 
     public uint Id { get; }
@@ -49,10 +50,29 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
     private uint _sequence;
     private bool _rebuildRows;
 
-    public SnifferWindowViewModel(CanConnectionManager manager)
+    public SnifferWindowViewModel(
+        CanConnectionManager manager,
+        IReadOnlyList<(uint Id, bool Visible)>? initialFilters = null)
     {
         _manager = manager;
         _manager.FrameReceived += OnFrameReceived;
+
+        // Seed the sniffer's filter list from the main window's ID filters. New IDs that
+        // arrive later are always added checked so nothing is missed.
+        if (initialFilters is not null)
+        {
+            foreach (var (id, visible) in initialFilters.OrderBy(entry => entry.Id))
+            {
+                if (_filters.ContainsKey(id))
+                {
+                    continue;
+                }
+
+                var filter = new SnifferFilterItem(id, OnFilterChanged, visible);
+                _filters[id] = filter;
+                Filters.Add(filter);
+            }
+        }
 
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
         _refreshTimer.Tick += (_, _) => Refresh();
@@ -168,9 +188,12 @@ public partial class SnifferWindowViewModel : ObservableObject, IDisposable
             entry = new SnifferEntry(frame, now, _sequence);
             _entries[frame.FrameId] = entry;
 
-            var filter = new SnifferFilterItem(frame.FrameId, OnFilterChanged);
-            _filters[frame.FrameId] = filter;
-            InsertFilter(filter);
+            if (!_filters.TryGetValue(frame.FrameId, out var filter))
+            {
+                filter = new SnifferFilterItem(frame.FrameId, OnFilterChanged);
+                _filters[frame.FrameId] = filter;
+                InsertFilter(filter);
+            }
 
             if (filter.IsChecked)
             {
