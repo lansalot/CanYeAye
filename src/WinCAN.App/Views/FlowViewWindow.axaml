@@ -1,0 +1,181 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:WinCAN.App.ViewModels"
+        xmlns:controls="using:WinCAN.App.Controls"
+        mc:Ignorable="d"
+        x:Class="WinCAN.App.Views.FlowViewWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:FlowViewWindowViewModel"
+        Width="1220" Height="820"
+        MinWidth="900" MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        Title="Flow View">
+  <Window.Styles>
+    <Style Selector="Button.transport">
+      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.caption">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Opacity" Value="0.75" />
+    </Style>
+    <Style Selector="Border.panel">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="6" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="6">
+    <!-- Frame IDs: always every ID in the capture, filters are ignored here. -->
+    <Border DockPanel.Dock="Left" Classes="panel" Width="190" Margin="0,0,6,0">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Frame IDs Found:" Margin="0,0,0,4" />
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding FrameCountText}" Classes="caption"
+                   Margin="0,4,0,0" />
+        <ListBox ItemsSource="{Binding Ids}"
+                 SelectedItem="{Binding SelectedIdItem, Mode=TwoWay}"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem">
+              <Setter Property="MinHeight" Value="0" />
+              <Setter Property="Padding" Value="5,2" />
+            </Style>
+          </ListBox.Styles>
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- Playback control. -->
+    <Border DockPanel.Dock="Right" Classes="panel" Width="212" Margin="6,0,0,0">
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="5">
+          <TextBlock Text="Playback Control" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="4">
+            <Button Grid.Row="0" Grid.Column="0" Classes="transport" Content="&#x23EE;"
+                    Command="{Binding StepBackCommand}" ToolTip.Tip="Back one frame (T)" />
+            <Button Grid.Row="0" Grid.Column="1" Classes="transport" Content="&#x23F9;"
+                    Command="{Binding StopCommand}" ToolTip.Tip="Stop and go to the first frame" />
+            <Button Grid.Row="0" Grid.Column="2" Classes="transport" Content="&#x23ED;"
+                    Command="{Binding StepForwardCommand}" ToolTip.Tip="Forward one frame (Y)" />
+            <Button Grid.Row="1" Grid.Column="0" Classes="transport" Content="&#x23EA;"
+                    Command="{Binding ReverseCommand}" ToolTip.Tip="Play backward" />
+            <Button Grid.Row="1" Grid.Column="1" Classes="transport" Content="&#x23F8;"
+                    Command="{Binding PauseCommand}" ToolTip.Tip="Pause (R)" />
+            <Button Grid.Row="1" Grid.Column="2" Classes="transport" Content="&#x25B6;"
+                    Command="{Binding PlayCommand}" ToolTip.Tip="Play forward (R)" />
+          </Grid>
+
+          <TextBlock Text="Playback speed (ms)" Classes="caption" Margin="0,4,0,0" />
+          <NumericUpDown Value="{Binding PlaybackSpeedMs}" Minimum="0" Maximum="5000"
+                         Increment="10" FormatString="0 'ms'" />
+          <CheckBox Content="Loop playback" IsChecked="{Binding LoopPlayback}" />
+
+          <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4" />
+          <TextBlock Text="Current frame" Classes="caption" />
+          <TextBlock Text="{Binding CurrentFrameText}" FontWeight="Bold" />
+          <TextBlock Text="{Binding PlaybackText}" Classes="caption" />
+
+          <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="0,4" />
+          <CheckBox Content="Auto reference" IsChecked="{Binding AutoReference}"
+                    ToolTip.Tip="Compare each frame with the previous one, so the grid shows what just changed. Uncheck to compare against the editable Ref values." />
+          <CheckBox Content="Live mode (no playback)" IsChecked="{Binding LiveMode}"
+                    ToolTip.Tip="Follow the newest frame of the selected ID as traffic arrives." />
+          <CheckBox Content="Graph by timestamp" IsChecked="{Binding GraphByTimestamp}"
+                    ToolTip.Tip="Use capture time on the graph axis instead of frame numbers." />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,6,0,0"
+            BorderThickness="1,0,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <TextBlock Text="{Binding StatusText}" Classes="caption" TextTrimming="CharacterEllipsis" />
+    </Border>
+
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="0,0,0,6">
+      <TextBlock Text="Timeline:" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <Slider Grid.Column="1" Minimum="0" Maximum="{Binding TimelineMaximum}"
+              Value="{Binding TimelinePosition, Mode=TwoWay}"
+              ToolTip.Tip="Scrub through every frame with the selected ID." />
+    </Grid>
+
+    <Grid RowDefinitions="3*,2*,Auto" RowSpacing="6">
+      <Border Grid.Row="0" Classes="panel">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="caption"
+                     Text="Payload bits - click a bit to make it a playback trigger (bits that just changed flash red/green)"
+                     Margin="0,0,0,4" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+          <controls:FlowBitGrid Model="{Binding BitGrid}"
+                                TriggerVersion="{Binding TriggerVersion}"
+                                BitClicked="OnBitClicked"
+                                Foreground="{DynamicResource SystemBaseHighColor}"
+                                Background="Transparent" />
+        </DockPanel>
+      </Border>
+
+      <Border Grid.Row="1" Classes="panel">
+        <controls:FlowGraphControl Model="{Binding Graph}"
+                                   Foreground="{DynamicResource SystemBaseHighColor}"
+                                   Background="Transparent" />
+      </Border>
+
+      <Grid Grid.Row="2" RowDefinitions="Auto,Auto" RowSpacing="4">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+          <TextBlock Text="Chart range" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="1" Maximum="500" Value="{Binding ChartRange}"
+                  TickFrequency="10" IsSnapToTickEnabled="False"
+                  ToolTip.Tip="Frames shown either side of the current frame." />
+          <TextBlock Grid.Column="2" Text="{Binding ChartRangeText}" FontWeight="Bold"
+                     VerticalAlignment="Center" MinWidth="28" />
+          <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4">
+            <Button Content="Select all graphs" Command="{Binding SelectAllGraphsCommand}" />
+            <Button Content="Deselect all graphs" Command="{Binding DeselectAllGraphsCommand}" />
+          </StackPanel>
+        </Grid>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding ByteRows}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="False"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  RowHeight="24"
+                  Height="228">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Byte" Width="64" IsReadOnly="True"
+                                Binding="{Binding IndexText}" />
+            <DataGridTextColumn Header="Val" Width="72" IsReadOnly="True"
+                                Binding="{Binding ValueText}" />
+            <DataGridTextColumn Header="Ref" Width="72"
+                                Binding="{Binding ReferenceText, Mode=TwoWay}" />
+            <DataGridTextColumn Header="Seek" Width="72"
+                                Binding="{Binding SeekText, Mode=TwoWay}" />
+            <DataGridCheckBoxColumn Header="Graph?" Width="72"
+                                    Binding="{Binding IsGraphEnabled, Mode=TwoWay}" />
+            <DataGridTemplateColumn Header="Colour" Width="90">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <Border Width="44" Height="14" CornerRadius="2" VerticalAlignment="Center"
+                          Background="{Binding Colour}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</Window>

@@ -136,9 +136,9 @@ and test.
   Lawicel, QT SerialBus placeholder, socketcand, MQTT, CANserver, CANlogserver); GVRET TCP uses
   port 23 and the CAN bus speed is a drop-down of standard speeds, persisted in settings.
   Non-modal send-frame window, DBC manager (multi-file load/remove/reorder), log-loading
-  progress dialog, scripting window, OBD-II poller window, sniffer window, and a compact
-  frame-filter pane (per-ID list plus a J1939 node-name/bulk-selection tab) that docks
-  into the main window on the left or right (the grid resizes around it) and only uses a
+  progress dialog, scripting window, OBD-II poller window, sniffer window, flow-view window,
+  and a compact frame-filter pane (per-ID list plus a J1939 node-name/bulk-selection tab) that
+  docks into the main window on the left or right (the grid resizes around it) and only uses a
   separate window in Float/Full Height mode; the last host mode is remembered. ID filter
   labels include DBC message names when interpreting, and loading a new log resets the
   ID/bus filters. Layout
@@ -152,6 +152,17 @@ and test.
   observed rate is below the threshold. Header stays fixed while scrolling; the ID filter list
   is seeded from the main window's ID filters when it opens, and IDs that arrive later are
   added checked by default.
+- Flow View (parity with `re/flowviewwindow`): `WinCAN.Core.Analysis.FlowViewSession` holds the
+  frames of the selected ID plus the auto-reference, seek and trigger state (unit tested); the
+  window lists every capture ID while ignoring the main window's filters, steps one frame
+  (`T`/`Y`) or plays forward/backward (`R`) at a configurable interval with looping, follows
+  live traffic, and scrubs with a timeline slider. Set bits are black and clear bits white in a
+  full-width grid (wide bars, no per-cell borders) where 0→1 flashes green and 1→0 red; static
+  reference bytes are editable or auto-set to the previous frame. Seek bytes (`-1` disabled)
+  stop playback on a match, and clicking a bit makes it a trigger that stops playback when it
+  changes. The byte graph is a custom windowed control with a range slider, per-byte `Graph?`
+  toggle and an eight-colour palette. Geometry persists; design notes:
+  `docs/research/flow-view.md`.
 - J1939 node analysis (WinCAN original, no SavvyCAN equivalent): `WinCAN.Core.Analysis`
   (`J1939NodeNames` with load/save file and settings persistence, `NodeTraffic` per source /
   conversation / broadcast). The Frame Filtering window keeps the per-ID list on its
@@ -170,6 +181,8 @@ and test.
 
 - Verify the node graph's pinch-zoom and long-press naming on a real touchscreen (the control
   tracks touch pointers manually).
+- Optional Flow View follow-ups: hover readout on the byte graph, remembering the last selected
+  ID and playback options across restarts, and validating seek/ref input inline.
 - Optional graph follow-ups: time-window filtering for live traffic, PNG export, per-conversation
   hover readout, node-size legend.
 

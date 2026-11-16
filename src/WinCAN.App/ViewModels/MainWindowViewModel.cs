@@ -110,6 +110,18 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Snapshot of the capture (loaded log or live frames) for analysis windows.</summary>
     public IReadOnlyList<CanFrame> FrameSnapshot() => _store.Snapshot();
 
+    /// <summary>
+    /// Human-readable label for a frame's ID (hex ID, J1939 node name when known and the DBC
+    /// message name when interpreting) - used by the analysis windows' ID lists.
+    /// </summary>
+    public string DescribeFrameId(CanFrame frame) => BuildFilterLabel(frame.FrameId, frame.IsExtended);
+
+    /// <summary>
+    /// Raised after the capture is replaced (log loaded or frames cleared) so open analysis
+    /// windows can re-read <see cref="FrameSnapshot"/>.
+    /// </summary>
+    public event EventHandler? CaptureReplaced;
+
     /// <summary>Snapshot of the main ID filters (ID + checked) used to seed the sniffer.</summary>
     public IReadOnlyList<(uint Id, bool Visible)> FilterStateSnapshot() =>
         _allFrameFilters.Select(filter => (filter.Id, filter.IsChecked)).ToList();
@@ -130,6 +142,14 @@ public partial class MainWindowViewModel : ObservableObject
     public int NodeGraphWindowX { get; set; } = int.MinValue;
 
     public int NodeGraphWindowY { get; set; } = int.MinValue;
+
+    public double FlowWindowWidth { get; set; } = 1220;
+
+    public double FlowWindowHeight { get; set; } = 820;
+
+    public int FlowWindowX { get; set; } = int.MinValue;
+
+    public int FlowWindowY { get; set; } = int.MinValue;
 
     /// <summary>Raised when the view should scroll to the newest frame (auto-scroll).</summary>
     public event EventHandler? ScrollToEndRequested;
@@ -499,6 +519,7 @@ public partial class MainWindowViewModel : ObservableObject
                 ? $"Loaded {loaded.frames.Count:N0} frames from {Path.GetFileName(path)} (showing the last {MaxDisplayedFrames:N0})"
                 : $"Loaded {loaded.frames.Count:N0} frames from {Path.GetFileName(path)}";
             LogBus.Info(StatusText);
+            CaptureReplaced?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
@@ -687,6 +708,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         StatusText = "Frames cleared";
+        CaptureReplaced?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Drops every ID/bus filter and rebuilds the empty filter lists.</summary>

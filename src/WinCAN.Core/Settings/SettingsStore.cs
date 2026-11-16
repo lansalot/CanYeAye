@@ -90,6 +90,14 @@ public sealed record AppSettings
 
     public int NodeGraphWindowY { get; init; } = int.MinValue;
 
+    public double FlowWindowWidth { get; init; } = 1220;
+
+    public double FlowWindowHeight { get; init; } = 820;
+
+    public int FlowWindowX { get; init; } = int.MinValue;
+
+    public int FlowWindowY { get; init; } = int.MinValue;
+
     public List<ColumnLayout> Columns { get; init; } = [];
 }
 

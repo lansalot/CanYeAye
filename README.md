@@ -38,6 +38,11 @@ a cansniffer-style analysis view and an interactive J1939 node graph.
   change highlighting, notching, mute-notched, fade-inactive bytes, bit view (green = 1,
   red = 0 cells with white outlines), expiry and a minimum-rate (Hz) filter. Its ID filters
   are seeded from the main window when it opens; newly seen IDs appear checked by default.
+- **Flow View** (Tools → Flow View…): pick any captured ID (main filters are ignored) and
+  step or play through its frames. Payload bits fill a full-width black/white grid where
+  changed bits flash red/green, with auto or editable reference bytes, per-byte seek values
+  that stop playback on a match, clickable trigger bits, a live/capture byte graph with a
+  scrollable frame range, and a per-byte `Graph?` toggle, speed and loop controls.
 - **J1939 node graph** (Tools → Node Graph…): conversations between named source nodes with
   edge thickness proportional to traffic, a broadcast bar, top talkers, hover details, drag
   to rearrange, wheel/pinch zoom and pan, and long-press/double-click node naming. Works from
@@ -58,6 +63,11 @@ talkers.*
 ![Sniffer window](docs/images/sniffer.png)
 
 *Sniffer: per-ID delta and frequency, changed bytes highlighted, notching and filters.*
+
+![Flow View window](docs/images/flow-view.png)
+
+*Flow View: full-width payload bits with red/green change flashes, per-byte graph, reference,
+seek and trigger controls.*
 
 ![New Connection dialog](docs/images/connection-dialog.png)
 

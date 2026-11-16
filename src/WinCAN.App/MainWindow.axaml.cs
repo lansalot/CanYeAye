@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private FrameFilterHost _frameFilterHost = FrameFilterHost.None;
     private FrameFilterHost _lastFrameFilterHost = FrameFilterHost.Right;
     private Views.ProgressWindow? _progressWindow;
+    private Views.FlowViewWindow? _flowViewWindow;
 
     private enum FrameFilterHost
     {
@@ -89,6 +90,11 @@ public partial class MainWindow : Window
         _viewModel.NodeGraphWindowHeight = _settings.NodeGraphWindowHeight;
         _viewModel.NodeGraphWindowX = _settings.NodeGraphWindowX;
         _viewModel.NodeGraphWindowY = _settings.NodeGraphWindowY;
+
+        _viewModel.FlowWindowWidth = _settings.FlowWindowWidth;
+        _viewModel.FlowWindowHeight = _settings.FlowWindowHeight;
+        _viewModel.FlowWindowX = _settings.FlowWindowX;
+        _viewModel.FlowWindowY = _settings.FlowWindowY;
 
         if (Enum.TryParse<FrameFilterHost>(_settings.FrameFilterHost, ignoreCase: true, out var savedFilterHost) &&
             savedFilterHost != FrameFilterHost.None)
@@ -174,6 +180,10 @@ public partial class MainWindow : Window
                 NodeGraphWindowHeight = _viewModel.NodeGraphWindowHeight,
                 NodeGraphWindowX = _viewModel.NodeGraphWindowX,
                 NodeGraphWindowY = _viewModel.NodeGraphWindowY,
+                FlowWindowWidth = _viewModel.FlowWindowWidth,
+                FlowWindowHeight = _viewModel.FlowWindowHeight,
+                FlowWindowX = _viewModel.FlowWindowX,
+                FlowWindowY = _viewModel.FlowWindowY,
                 FrameFilterHost = _lastFrameFilterHost.ToString(),
             });
         }
@@ -550,6 +560,49 @@ public partial class MainWindow : Window
             _viewModel.NodeGraphWindowY = window.Position.Y;
         };
 
+        window.Show(this);
+    }
+
+    private void OnFlowViewClick(object? sender, RoutedEventArgs e)
+    {
+        if (_flowViewWindow is { } existing)
+        {
+            existing.Activate();
+            return;
+        }
+
+        var viewModel = new FlowViewWindowViewModel(
+            _viewModel.FrameSnapshot,
+            _viewModel.DescribeFrameId,
+            _viewModel.ConnectionManager);
+        var window = new Views.FlowViewWindow(viewModel);
+
+        if (_viewModel.FlowWindowWidth > 0)
+        {
+            window.Width = _viewModel.FlowWindowWidth;
+            window.Height = _viewModel.FlowWindowHeight;
+        }
+
+        if (_viewModel.FlowWindowX != int.MinValue && _viewModel.FlowWindowY != int.MinValue)
+        {
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Position = new PixelPoint(_viewModel.FlowWindowX, _viewModel.FlowWindowY);
+        }
+
+        void OnCaptureReplaced(object? captureSender, EventArgs args) => viewModel.ReloadCapture();
+        _viewModel.CaptureReplaced += OnCaptureReplaced;
+
+        window.Closed += (_, _) =>
+        {
+            _viewModel.CaptureReplaced -= OnCaptureReplaced;
+            _viewModel.FlowWindowWidth = window.Width;
+            _viewModel.FlowWindowHeight = window.Height;
+            _viewModel.FlowWindowX = window.Position.X;
+            _viewModel.FlowWindowY = window.Position.Y;
+            _flowViewWindow = null;
+        };
+
+        _flowViewWindow = window;
         window.Show(this);
     }
 

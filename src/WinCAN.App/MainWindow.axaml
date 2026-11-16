@@ -47,6 +47,7 @@
         <MenuItem Header="_OBD-II..." Click="OnObd2Click" />
         <MenuItem Header="S_niffer..." Click="OnSnifferClick" />
         <MenuItem Header="_Node Graph..." Click="OnNodeGraphClick" />
+        <MenuItem Header="Flow _View..." Click="OnFlowViewClick" />
       </MenuItem>
     </Menu>
 
