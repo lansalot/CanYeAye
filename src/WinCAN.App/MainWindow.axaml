@@ -48,6 +48,7 @@
         <MenuItem Header="S_niffer..." Click="OnSnifferClick" />
         <MenuItem Header="_Node Graph..." Click="OnNodeGraphClick" />
         <MenuItem Header="Flow _View..." Click="OnFlowViewClick" />
+        <MenuItem Header="_Detailed Frame Information..." Click="OnFrameInfoClick" />
       </MenuItem>
     </Menu>
 

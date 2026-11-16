@@ -98,6 +98,14 @@ public sealed record AppSettings
 
     public int FlowWindowY { get; init; } = int.MinValue;
 
+    public double FrameInfoWindowWidth { get; init; } = 1280;
+
+    public double FrameInfoWindowHeight { get; init; } = 860;
+
+    public int FrameInfoWindowX { get; init; } = int.MinValue;
+
+    public int FrameInfoWindowY { get; init; } = int.MinValue;
+
     public List<ColumnLayout> Columns { get; init; } = [];
 }
 

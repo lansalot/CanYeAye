@@ -3,7 +3,9 @@ name: Build & Release
 # Releases are cut by pushing a tag, for example:
 #   git tag v0.1.3
 #   git push origin v0.1.3
-# Branch pushes and pull requests do not build anything.
+# Branch pushes and pull requests do not build anything. A tag only builds when its
+# commit is on main; tags on unmerged branches or side commits fail the `tag-on-main`
+# gate and never reach the build, publish or release jobs.
 on:
   push:
     tags: ['v*']
@@ -21,8 +23,32 @@ env:
   CONFIGURATION: Release
 
 jobs:
+  # A tag can point at any commit, including one on a feature branch. Releases are only
+  # cut from main, so this gate fails the run (which skips every downstream job) when the
+  # tagged commit is not reachable from main.
+  tag-on-main:
+    name: Check tag is on main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify the tagged commit is reachable from main
+        shell: bash
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
+            echo "Tag $GITHUB_REF_NAME ($GITHUB_SHA) is on main - continuing with the build."
+          else
+            echo "::error::Tag $GITHUB_REF_NAME points at $GITHUB_SHA, which is not on main. Merge the commit into main (or move the tag) and push again."
+            exit 1
+          fi
+
   build-test:
     name: Build and test
+    needs: tag-on-main
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,8 +75,11 @@ jobs:
 
   publish:
     name: Publish ${{ matrix.rid }}
-    needs: build-test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [tag-on-main, build-test]
+    if: >-
+      startsWith(github.ref, 'refs/tags/v')
+      && needs.tag-on-main.result == 'success'
+      && needs.build-test.result == 'success'
     strategy:
       fail-fast: false
       matrix:
@@ -117,8 +146,11 @@ jobs:
 
   release:
     name: Create release
-    needs: publish
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [tag-on-main, publish]
+    if: >-
+      startsWith(github.ref, 'refs/tags/v')
+      && needs.tag-on-main.result == 'success'
+      && needs.publish.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write

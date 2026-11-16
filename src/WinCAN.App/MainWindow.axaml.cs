@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private FrameFilterHost _lastFrameFilterHost = FrameFilterHost.Right;
     private Views.ProgressWindow? _progressWindow;
     private Views.FlowViewWindow? _flowViewWindow;
+    private Views.FrameInfoWindow? _frameInfoWindow;
 
     private enum FrameFilterHost
     {
@@ -95,6 +96,11 @@ public partial class MainWindow : Window
         _viewModel.FlowWindowHeight = _settings.FlowWindowHeight;
         _viewModel.FlowWindowX = _settings.FlowWindowX;
         _viewModel.FlowWindowY = _settings.FlowWindowY;
+
+        _viewModel.FrameInfoWindowWidth = _settings.FrameInfoWindowWidth;
+        _viewModel.FrameInfoWindowHeight = _settings.FrameInfoWindowHeight;
+        _viewModel.FrameInfoWindowX = _settings.FrameInfoWindowX;
+        _viewModel.FrameInfoWindowY = _settings.FrameInfoWindowY;
 
         if (Enum.TryParse<FrameFilterHost>(_settings.FrameFilterHost, ignoreCase: true, out var savedFilterHost) &&
             savedFilterHost != FrameFilterHost.None)
@@ -184,6 +190,10 @@ public partial class MainWindow : Window
                 FlowWindowHeight = _viewModel.FlowWindowHeight,
                 FlowWindowX = _viewModel.FlowWindowX,
                 FlowWindowY = _viewModel.FlowWindowY,
+                FrameInfoWindowWidth = _viewModel.FrameInfoWindowWidth,
+                FrameInfoWindowHeight = _viewModel.FrameInfoWindowHeight,
+                FrameInfoWindowX = _viewModel.FrameInfoWindowX,
+                FrameInfoWindowY = _viewModel.FrameInfoWindowY,
                 FrameFilterHost = _lastFrameFilterHost.ToString(),
             });
         }
@@ -603,6 +613,48 @@ public partial class MainWindow : Window
         };
 
         _flowViewWindow = window;
+        window.Show(this);
+    }
+
+    private void OnFrameInfoClick(object? sender, RoutedEventArgs e)
+    {
+        if (_frameInfoWindow is { } existing)
+        {
+            existing.Activate();
+            return;
+        }
+
+        // Snapshot semantics: the window analyses the capture as it is right now and never
+        // subscribes to live frames (unlike Flow View).
+        var viewModel = new FrameInfoWindowViewModel(
+            _viewModel.FrameSnapshot(),
+            _viewModel.DescribeFrameId,
+            _viewModel.Dbc,
+            _viewModel.FileDialogs);
+        var window = new Views.FrameInfoWindow(viewModel);
+
+        if (_viewModel.FrameInfoWindowWidth > 0)
+        {
+            window.Width = _viewModel.FrameInfoWindowWidth;
+            window.Height = _viewModel.FrameInfoWindowHeight;
+        }
+
+        if (_viewModel.FrameInfoWindowX != int.MinValue && _viewModel.FrameInfoWindowY != int.MinValue)
+        {
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Position = new PixelPoint(_viewModel.FrameInfoWindowX, _viewModel.FrameInfoWindowY);
+        }
+
+        window.Closed += (_, _) =>
+        {
+            _viewModel.FrameInfoWindowWidth = window.Width;
+            _viewModel.FrameInfoWindowHeight = window.Height;
+            _viewModel.FrameInfoWindowX = window.Position.X;
+            _viewModel.FrameInfoWindowY = window.Position.Y;
+            _frameInfoWindow = null;
+        };
+
+        _frameInfoWindow = window;
         window.Show(this);
     }
 
