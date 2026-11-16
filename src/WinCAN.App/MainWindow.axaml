@@ -32,7 +32,6 @@
         <MenuItem Header="Suspend _Capturing" ToggleType="CheckBox" IsChecked="{Binding CaptureSuspended, Mode=TwoWay}" />
         <Separator />
         <MenuItem Header="_Clear Frames" Command="{Binding ClearFramesCommand}" />
-        <MenuItem Header="_Graph Selected" Command="{Binding GraphCommand}" />
         <MenuItem Header="Frame _Filtering..." Click="OnFrameFilterClick" />
         <MenuItem Header="Show _All Columns" Click="OnShowAllColumnsClick" />
         <Separator />
