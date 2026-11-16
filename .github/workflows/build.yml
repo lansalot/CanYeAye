@@ -1,0 +1,128 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  CONFIGURATION: Release
+  DOTNET_SDK_VERSION: 10.0.404
+
+jobs:
+  build-test:
+    name: Build and test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration $env:CONFIGURATION --no-restore
+
+      - name: Test
+        run: dotnet test --configuration $env:CONFIGURATION --no-build --nologo -v q
+
+  publish:
+    name: Publish ${{ matrix.rid }}
+    needs: build-test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+          - rid: linux-x64
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Publish
+        run: >
+          dotnet publish src/WinCAN.App/WinCAN.App.csproj
+          --configuration ${{ env.CONFIGURATION }}
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          -p:Version=0.1.${{ github.run_number }}
+          --output publish
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path publish/* -DestinationPath dist/wincan-${{ matrix.rid }}.zip
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p dist/wincan-${{ matrix.rid }}
+          cp -a publish/. dist/wincan-${{ matrix.rid }}/
+          tar -czf dist/wincan-${{ matrix.rid }}.tar.gz -C dist wincan-${{ matrix.rid }}
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: wincan-${{ matrix.rid }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Create release
+    needs: publish
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v0.1.${{ github.run_number }}"
+          gh release create "$tag" dist/* \
+            --repo "${{ github.repository }}" \
+            --title "WinCAN $tag" \
+            --generate-notes

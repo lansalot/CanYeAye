@@ -86,6 +86,20 @@ dotnet run --project src/WinCAN.App
 dotnet test --filter FullyQualifiedName~FileFormats
 ```
 
+## CI / releases
+
+`.github/workflows/build.yml` runs on PRs and pushes to `main`:
+
+- **build-test** (windows-latest, .NET 10.0.404): restore (NuGet cache), Release build and
+  `dotnet test` (277 tests).
+- **publish** (only on `main`, or a manual run on `main`): self-contained
+  `win-x64` (zip) and `linux-x64` (tar.gz) artifacts, one runner per RID.
+- **release** (only on `main`): creates a GitHub Release tagged `v0.1.<run_number>` with the
+  generated notes and both packages. The version also flows into the published assemblies.
+
+Run the workflow manually from the Actions tab to cut a release from `main`. PRs only build
+and test.
+
 ## Progress so far
 
 - `WinCAN.Core`: `CanFrame` / `FrameTimestamp` (CommFrame semantics), `CanFilter`, `CanIdParser`,
@@ -139,7 +153,7 @@ dotnet test --filter FullyQualifiedName~FileFormats
   conversation / broadcast). The Frame Filtering window keeps the per-ID list on its
   `Frame IDs` tab and adds a `J1939 Nodes` tab for renaming nodes and bulk-selecting a node's
   IDs (All/None, mixed = dash, plus a leading Broadcast row covering all broadcast
-  destinations) plus Load/Save. The main grid has a `Nodes` column showing
+  destinations) plus Load/Save/Reset. The main grid has a `Nodes` column showing
   `source → destination` with names. The Node Graph window (Tools → Node Graph…) shows live or
   captured traffic: nodes sized by involvement, bidirectional edges weighted by volume,
   broadcast bar, hover details and top talkers (`Name (0xNN): frames`), drag, wheel/pinch zoom,
