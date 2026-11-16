@@ -1,7 +1,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using WinCAN.App.Formatting;
 using WinCAN.Core;
+using WinCAN.Core.Analysis;
 using WinCAN.Core.Formatting;
+using WinCAN.Core.Protocols;
 
 namespace WinCAN.App.ViewModels;
 
@@ -12,6 +14,7 @@ namespace WinCAN.App.ViewModels;
 public partial class FrameRowViewModel : ObservableObject
 {
     private CanFrame _frame;
+    private J1939NodeNames? _nodeNames;
 
     public FrameRowViewModel(CanFrame frame)
     {
@@ -19,6 +22,29 @@ public partial class FrameRowViewModel : ObservableObject
     }
 
     public CanFrame Frame => _frame;
+
+    public void AttachNodeNames(J1939NodeNames names) => _nodeNames = names;
+
+    public void RefreshNodes() => OnPropertyChanged(nameof(NodeText));
+
+    /// <summary>J1939 source → destination, using configured node names when available.</summary>
+    public string NodeText
+    {
+        get
+        {
+            if (_nodeNames is null || !Frame.IsExtended)
+            {
+                return string.Empty;
+            }
+
+            var id = J1939Id.Decode(Frame.FrameId);
+            var source = _nodeNames.GetLabel(id.Source);
+            var destination = id.IsBroadcast || id.Destination == 0xFF
+                ? "Broadcast"
+                : _nodeNames.GetLabel(id.Destination);
+            return $"{source} → {destination}";
+        }
+    }
 
     public void SetFrame(CanFrame frame)
     {

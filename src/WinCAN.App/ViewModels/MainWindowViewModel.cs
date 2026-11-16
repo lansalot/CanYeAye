@@ -29,6 +29,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ConcurrentQueue<CanFrame> _pending = new();
     private readonly DispatcherTimer _flushTimer;
     private readonly DispatcherTimer _statsTimer;
+    private readonly DispatcherTimer _nodeTextTimer;
     private readonly Dictionary<uint, bool> _idFilters = [];
     private readonly Dictionary<byte, bool> _busFilters = [];
     private readonly Dictionary<uint, FrameFilterItem> _frameFilterItems = [];
@@ -70,6 +71,16 @@ public partial class MainWindowViewModel : ObservableObject
             TotalFramesCaptured = _store.Count;
         };
         _statsTimer.Start();
+
+        _nodeTextTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        _nodeTextTimer.Tick += (_, _) =>
+        {
+            _nodeTextTimer.Stop();
+            foreach (var row in Frames)
+            {
+                row.RefreshNodes();
+            }
+        };
     }
 
     public CanConnectionManager ConnectionManager { get; } = new();
@@ -93,8 +104,7 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<NodeNameItem> NodeNameItems { get; } = [];
 
     private readonly Dictionary<int, NodeNameItem> _nodeNameItems = [];
-    private readonly Dictionary<int, bool> _sourceFilters = [];
-    private bool _suppressSourceRebuild;
+    private bool _suppressNodeSelection;
 
     /// <summary>Snapshot of the capture (loaded log or live frames) for analysis windows.</summary>
     public IReadOnlyList<CanFrame> FrameSnapshot() => _store.Snapshot();
@@ -652,7 +662,7 @@ public partial class MainWindowViewModel : ObservableObject
         _allBusFilters.Clear();
         FrameFilters.Clear();
         BusFilters.Clear();
-        ResetSourceFilters();
+        ResetNodeSelections();
         FilterSearch = string.Empty;
         UpdateFilterSummary();
     }
@@ -1010,10 +1020,15 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private FrameRowViewModel CreateRow(CanFrame frame) => new(frame)
+    private FrameRowViewModel CreateRow(CanFrame frame)
     {
-        Interpretation = InterpretFrames ? Describe(frame) : string.Empty,
-    };
+        var row = new FrameRowViewModel(frame)
+        {
+            Interpretation = InterpretFrames ? Describe(frame) : string.Empty,
+        };
+        row.AttachNodeNames(NodeNames);
+        return row;
+    }
 
     private string Describe(CanFrame frame)
     {
@@ -1042,12 +1057,22 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (!_idFilters.ContainsKey(frame.FrameId))
         {
-            _idFilters[frame.FrameId] = true;
+            // A new ID of a node that the user has deselected starts hidden too.
+            var visible = true;
+            if (frame.IsExtended &&
+                _nodeNameItems.TryGetValue((int)(frame.FrameId & 0xFF), out var node) &&
+                node.IsChecked == false)
+            {
+                visible = false;
+            }
+
+            _idFilters[frame.FrameId] = visible;
             var item = new FrameFilterItem(
                 frame.FrameId,
                 frame.IsExtended,
                 BuildFilterLabel(frame.FrameId, frame.IsExtended),
-                OnIdFilterChanged);
+                OnIdFilterChanged,
+                visible);
             _frameFilterItems[frame.FrameId] = item;
             _allFrameFilters.Add(item);
             if (MatchesSearch(item.Label))
@@ -1056,6 +1081,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
 
             UpdateFilterSummary();
+            RefreshNodeSelectionStates();
         }
 
         if (!_busFilters.ContainsKey(frame.Bus))
@@ -1069,13 +1095,6 @@ public partial class MainWindowViewModel : ObservableObject
 
     private bool PassesFilters(CanFrame frame)
     {
-        if (frame.IsExtended &&
-            _sourceFilters.TryGetValue((int)(frame.FrameId & 0xFF), out var sourceVisible) &&
-            !sourceVisible)
-        {
-            return false;
-        }
-
         if (!_idFilters.TryGetValue(frame.FrameId, out var idVisible) || !idVisible)
         {
             return false;
@@ -1100,6 +1119,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         _idFilters[item.Id] = item.IsChecked;
         UpdateFilterSummary();
+        RefreshNodeSelectionStates();
         if (!_suppressFilterRebuild)
         {
             RebuildDisplay();
@@ -1163,13 +1183,16 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var source = (int)(frame.FrameId & 0xFF);
-        if (_nodeNameItems.ContainsKey(source))
-        {
-            return;
-        }
+        var id = J1939Id.Decode(frame.FrameId);
+        EnsureNodeItem(id.Source);
+    }
 
-        InsertNodeNameItem(source);
+    private void EnsureNodeItem(int address)
+    {
+        if (!_nodeNameItems.ContainsKey(address))
+        {
+            InsertNodeNameItem(address);
+        }
     }
 
     /// <summary>Creates/updates the editable rows for names restored from settings or a file.</summary>
@@ -1191,13 +1214,22 @@ public partial class MainWindowViewModel : ObservableObject
                 item.Name = name;
             }
         }
+
+        if (_nodeTextTimer is not null)
+        {
+            _nodeTextTimer.Stop();
+            _nodeTextTimer.Start();
+        }
     }
 
     private void InsertNodeNameItem(int address)
     {
-        var item = new NodeNameItem(address, NodeNames[address], OnNodeNameChanged, OnSourceFilterChanged);
+        var item = new NodeNameItem(
+            address,
+            NodeNames[address],
+            OnNodeNameChanged,
+            OnNodeSelectionChanged);
         _nodeNameItems[address] = item;
-        _sourceFilters[address] = true;
         var index = 0;
         while (index < NodeNameItems.Count && NodeNameItems[index].Address < address)
         {
@@ -1213,56 +1245,135 @@ public partial class MainWindowViewModel : ObservableObject
         RefreshFilterLabels();
     }
 
-    private void OnSourceFilterChanged(NodeNameItem item)
+    /// <summary>
+    /// Selecting a node only checks/unchecks the ID filters of that source, so the ID tab
+    /// remains the single source of truth for what is displayed.
+    /// </summary>
+    private void OnNodeSelectionChanged(NodeNameItem item)
     {
-        _sourceFilters[item.Address] = item.IsChecked;
-        if (!_suppressSourceRebuild)
+        if (_suppressNodeSelection)
         {
-            RebuildDisplay();
+            return;
         }
+
+        ApplyNodeSelection(item.Address, item.IsChecked == true);
+        RebuildDisplay();
     }
 
-    [RelayCommand]
-    private void SourceFilterAll() => SetAllSourceFilters(true);
-
-    [RelayCommand]
-    private void SourceFilterNone() => SetAllSourceFilters(false);
-
-    private void SetAllSourceFilters(bool checkedState)
+    private void ApplyNodeSelection(int address, bool selected)
     {
-        _suppressSourceRebuild = true;
+        _suppressFilterRebuild = true;
         try
         {
-            foreach (var item in NodeNameItems)
+            foreach (var filter in _allFrameFilters)
             {
-                item.IsChecked = checkedState;
-                _sourceFilters[item.Address] = checkedState;
+                if (!filter.Extended || (int)(filter.Id & 0xFF) != address || filter.IsChecked == selected)
+                {
+                    continue;
+                }
+
+                filter.IsChecked = selected;
             }
         }
         finally
         {
-            _suppressSourceRebuild = false;
+            _suppressFilterRebuild = false;
+        }
+
+        UpdateFilterSummary();
+    }
+
+    [RelayCommand]
+    private void NodeFilterAll() => SetAllNodeSelections(true);
+
+    [RelayCommand]
+    private void NodeFilterNone() => SetAllNodeSelections(false);
+
+    private void SetAllNodeSelections(bool selected)
+    {
+        _suppressNodeSelection = true;
+        try
+        {
+            foreach (var node in NodeNameItems)
+            {
+                node.IsChecked = selected;
+            }
+        }
+        finally
+        {
+            _suppressNodeSelection = false;
+        }
+
+        foreach (var node in NodeNameItems)
+        {
+            ApplyNodeSelection(node.Address, selected);
         }
 
         RebuildDisplay();
     }
 
-    private void ResetSourceFilters()
+    /// <summary>Recomputes the node checkboxes from the per-ID selection (mixed = null).</summary>
+    private void RefreshNodeSelectionStates()
     {
-        _suppressSourceRebuild = true;
+        if (NodeNameItems.Count == 0)
+        {
+            return;
+        }
+
+        _suppressNodeSelection = true;
         try
         {
-            foreach (var item in NodeNameItems)
+            foreach (var node in NodeNameItems)
             {
-                item.IsChecked = true;
+                var total = 0;
+                var selected = 0;
+                foreach (var filter in _allFrameFilters)
+                {
+                    if (!filter.Extended || (int)(filter.Id & 0xFF) != node.Address)
+                    {
+                        continue;
+                    }
+
+                    total++;
+                    if (_idFilters.TryGetValue(filter.Id, out var visible) && visible)
+                    {
+                        selected++;
+                    }
+                }
+
+                if (total == 0)
+                {
+                    // No IDs for this node yet: keep the user's explicit on/off choice.
+                    continue;
+                }
+
+                node.IsChecked = selected == total
+                    ? true
+                    : selected == 0
+                        ? false
+                        : null;
             }
         }
         finally
         {
-            _suppressSourceRebuild = false;
+            _suppressNodeSelection = false;
         }
+    }
 
-        _sourceFilters.Clear();
+    private void ResetNodeSelections()
+    {
+        _suppressNodeSelection = true;
+        try
+        {
+            foreach (var node in NodeNameItems)
+            {
+                node.IsChecked = true;
+            }
+        }
+        finally
+        {
+            _suppressNodeSelection = false;
+        }
     }
 
     private void RefreshFilterLabels()

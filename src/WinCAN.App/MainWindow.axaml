@@ -108,6 +108,7 @@
             <MenuItem Header="Show Type column" ToggleType="CheckBox" IsChecked="True" Tag="Type" Click="OnToggleColumnClick" />
             <MenuItem Header="Show Count column" ToggleType="CheckBox" IsChecked="False" Tag="Count" Click="OnToggleColumnClick" />
             <MenuItem Header="Show ID column" ToggleType="CheckBox" IsChecked="True" Tag="ID" Click="OnToggleColumnClick" />
+            <MenuItem Header="Show Nodes column" ToggleType="CheckBox" IsChecked="True" Tag="Nodes" Click="OnToggleColumnClick" />
             <MenuItem Header="Show Len column" ToggleType="CheckBox" IsChecked="True" Tag="Len" Click="OnToggleColumnClick" />
             <MenuItem Header="Show ASCII column" ToggleType="CheckBox" IsChecked="True" Tag="ASCII" Click="OnToggleColumnClick" />
             <MenuItem Header="Show Data column" ToggleType="CheckBox" IsChecked="True" Tag="Data" Click="OnToggleColumnClick" />
@@ -128,6 +129,7 @@
           <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="80" />
           <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="60" IsVisible="False" />
           <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="100" />
+          <DataGridTextColumn Header="Nodes" Binding="{Binding NodeText}" Width="220" />
           <DataGridTextColumn Header="Len" Binding="{Binding Length}" Width="60" />
           <DataGridTextColumn Header="ASCII" Binding="{Binding Ascii}" Width="130" />
           <DataGridTemplateColumn Header="Data" Width="*">

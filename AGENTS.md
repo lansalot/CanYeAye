@@ -132,12 +132,14 @@ dotnet test --filter FullyQualifiedName~FileFormats
   IDs while their observed rate is below the threshold. Header stays fixed while scrolling.
 - J1939 node analysis (WinCAN original, no SavvyCAN equivalent): `WinCAN.Core.Analysis`
   (`J1939NodeNames` with load/save file and settings persistence, `NodeTraffic` per source /
-  conversation / broadcast). The Frame Filtering window has a `J1939 Nodes` tab (names,
-  per-source include/exclude with All/None, Load/Save) and a Node Graph window
-  (Tools → Node Graph…) showing live or captured traffic: nodes sized by involvement,
-  bidirectional edges weighted by volume, broadcast bar, hover details/top talkers, drag,
-  wheel/pinch zoom, pan, long-press/double-click node naming. Node positions, zoom/pan and
-  window geometry persist. Design notes: `docs/research/j1939-node-analysis.md`.
+  conversation / broadcast). The Frame Filtering window keeps the per-ID list on its
+  `Frame IDs` tab and adds a `J1939 Nodes` tab for renaming nodes and bulk-selecting a node's
+  IDs (All/None, mixed = dash) plus Load/Save. The main grid has a `Nodes` column showing
+  `source → destination` with names. The Node Graph window (Tools → Node Graph…) shows live or
+  captured traffic: nodes sized by involvement, bidirectional edges weighted by volume,
+  broadcast bar, hover details/top talkers, drag, wheel/pinch zoom, pan, long-press/double-click
+  node naming. Node positions, zoom/pan and window geometry persist. Design notes:
+  `docs/research/j1939-node-analysis.md`.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 

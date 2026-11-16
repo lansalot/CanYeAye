@@ -8,12 +8,18 @@ public partial class FrameFilterItem : ObservableObject
 {
     private readonly Action<FrameFilterItem> _changed;
 
-    public FrameFilterItem(uint id, bool extended, string label, Action<FrameFilterItem> changed)
+    public FrameFilterItem(
+        uint id,
+        bool extended,
+        string label,
+        Action<FrameFilterItem> changed,
+        bool isChecked = true)
     {
         Id = id;
         Extended = extended;
         Label = label;
         _changed = changed;
+        _isChecked = isChecked;
     }
 
     public uint Id { get; }
@@ -51,22 +57,18 @@ public partial class BusFilterItem : ObservableObject
     partial void OnIsCheckedChanged(bool value) => _changed(this);
 }
 
-/// <summary>Editable name for a J1939 source address (node); checkbox includes/excludes it.</summary>
+/// <summary>Editable name for a J1939 source address; its checkbox selects the node's IDs.</summary>
 public partial class NodeNameItem : ObservableObject
 {
     private readonly Action<int, string?> _applyName;
-    private readonly Action<NodeNameItem> _filterChanged;
+    private readonly Action<NodeNameItem> _selectionChanged;
 
-    public NodeNameItem(
-        int address,
-        string? name,
-        Action<int, string?> applyName,
-        Action<NodeNameItem> filterChanged)
+    public NodeNameItem(int address, string? name, Action<int, string?> applyName, Action<NodeNameItem> selectionChanged)
     {
         Address = address;
         _name = name ?? string.Empty;
         _applyName = applyName;
-        _filterChanged = filterChanged;
+        _selectionChanged = selectionChanged;
     }
 
     public int Address { get; }
@@ -76,10 +78,11 @@ public partial class NodeNameItem : ObservableObject
     [ObservableProperty]
     private string _name;
 
+    /// <summary>True/false select or clear all of this node's IDs; null when they are mixed.</summary>
     [ObservableProperty]
-    private bool _isChecked = true;
+    private bool? _isChecked = true;
 
     partial void OnNameChanged(string value) => _applyName(Address, value);
 
-    partial void OnIsCheckedChanged(bool value) => _filterChanged(this);
+    partial void OnIsCheckedChanged(bool? value) => _selectionChanged(this);
 }

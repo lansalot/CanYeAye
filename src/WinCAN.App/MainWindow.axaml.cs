@@ -517,11 +517,24 @@ public partial class MainWindow : Window
             .Where(column => column is not null)
             .ToList();
 
-        for (var i = 0; i < ordered.Count; i++)
+        // Columns added after the layout was saved (e.g. Nodes) keep their default
+        // position: slot them in after the ID column and keep them visible.
+        var savedHeaders = settings.Columns
+            .Select(saved => saved.Header)
+            .ToHashSet(StringComparer.Ordinal);
+        var unlisted = FrameGrid.Columns
+            .Where(column => !savedHeaders.Contains((column.Header as string) ?? string.Empty))
+            .ToList();
+        var idIndex = ordered.FindIndex(column =>
+            string.Equals(column!.Header as string, "ID", StringComparison.Ordinal));
+        var finalOrder = ordered.ToList();
+        finalOrder.InsertRange(idIndex >= 0 ? idIndex + 1 : finalOrder.Count, unlisted);
+
+        for (var i = 0; i < finalOrder.Count; i++)
         {
             try
             {
-                ordered[i]!.DisplayIndex = i;
+                finalOrder[i]!.DisplayIndex = i;
             }
             catch (ArgumentOutOfRangeException)
             {

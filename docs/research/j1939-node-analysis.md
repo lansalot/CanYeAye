@@ -8,15 +8,23 @@ PS for PDU1, `IsBroadcast` for PDU2).
 
 - Names are keyed by **J1939 source address 0–255**, e.g. `0x01 = Steering module`.
 - Unnamed nodes display their default address label `0xNN`.
-- The **Frame Filtering** window has a `J1939 Nodes` tab:
-  - one row per source seen in the capture (plus any named source restored from settings),
-  - editable name per row,
-  - a checkbox to include/exclude **all frames from that node** (bulk source filter) with
-    `All` / `None` buttons,
-  - `Load...` / `Save...` for a standalone node-names file.
+- The **Frame Filtering** window has two tabs:
+  - `Frame IDs` — the per-ID include/exclude list (unchanged; the single source of truth for
+    which frames are displayed).
+  - `J1939 Nodes` — one row per source address seen in the capture (plus any named source
+    restored from settings). Each row has:
+    - an editable name (`0x02` → `ABS`),
+    - a check box that **only selects/clears all IDs of that node on the `Frame IDs` tab**
+      (it is a bulk shortcut, not a second filter layer). Mixed ID selections show a dash
+      (`IsThreeState`),
+    - `All` / `None` for the whole node list,
+    - `Load...` / `Save...` for a standalone node-names file.
 - Names are also stored in WinCAN settings (`AppSettings.NodeNames`) so they survive restarts
   without an explicit file.
 - J1939 frame-filter labels append the source name: `0x18FEF101 [Steering module]`.
+- The main frame grid has a **`Nodes`** column showing `source → destination` with names when
+  available (`Steering module → ABS`, `Engine → Broadcast`; unnamed nodes use `0xNN`). It is
+  blank for standard 11-bit frames and can be hidden/reordered like any other column.
 
 ### Node-names file format
 
