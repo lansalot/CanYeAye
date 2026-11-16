@@ -3,7 +3,11 @@
     <OutputType>WinExe</OutputType>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <RootNamespace>WinCAN.App</RootNamespace>
+    <ApplicationIcon>canbus.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Include="canbus.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" />
