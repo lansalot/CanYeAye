@@ -1,6 +1,6 @@
 
 # Default: normalise recognised text files to LF in Git
-* text=auto eol=lf
+* text=auto
 
 # Explicitly treat common source/configuration files as text
 *.cs       text
