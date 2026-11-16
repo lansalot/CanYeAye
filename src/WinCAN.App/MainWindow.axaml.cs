@@ -207,6 +207,8 @@ public partial class MainWindow : Window
 
     private void OnExitClick(object? sender, RoutedEventArgs e) => Close();
 
+    private void OnAboutClick(object? sender, RoutedEventArgs e) => Views.AboutWindow.ShowFor(this);
+
     private void OnZoomOutClick(object? sender, RoutedEventArgs e) => ApplyScale(_uiScale - 0.1);
 
     private void OnZoomInClick(object? sender, RoutedEventArgs e) => ApplyScale(_uiScale + 0.1);

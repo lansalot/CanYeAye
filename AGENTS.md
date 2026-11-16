@@ -203,6 +203,8 @@ fails the gate produces no build, package or release.
   to the app menu's Quit) and shortcuts use Cmd (`NativeMenuBridge.SetShortcut`). PCAN uses a
   `DllImportResolver` in `PcanNative` that maps `PCANBasic.dll` to MacCAN's `libPCBUSB.dylib`
   (macOS) or `libpcanbasic.so` (Linux) - same PCAN-Basic C API. Vector XL has no macOS driver.
+  The About box is `Views/AboutWindow` (version from `AssemblyInformationalVersion`) and is
+  reachable from macOS's application menu and from Tools → About WinCAN… on every platform.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/WinCAN.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
 

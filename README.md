@@ -113,6 +113,8 @@ WinCAN keeps its own settings at `%APPDATA%\WinCAN\settings.json` (Windows),
 
 On macOS the menus live in the global menu bar (Quit is in the WinCAN application menu) and
 shortcuts use Cmd instead of Ctrl (Open ⌘O, Save ⌘S, Connection ⌘K, Zoom ⌘= / ⌘- / ⌘0).
+macOS also gets an About item in the application menu; Tools → About WinCAN… opens the same
+About box on every platform.
 To build a double-clickable `WinCAN.app` (ad-hoc signed, not notarized):
 
 ```bash

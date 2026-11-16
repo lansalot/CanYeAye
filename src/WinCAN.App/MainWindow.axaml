@@ -48,6 +48,8 @@
         <MenuItem Header="_Node Graph..." Click="OnNodeGraphClick" />
         <MenuItem Header="Flow _View..." Click="OnFlowViewClick" />
         <MenuItem Header="_Detailed Frame Information..." Click="OnFrameInfoClick" />
+        <Separator />
+        <MenuItem Header="About _WinCAN..." Click="OnAboutClick" />
       </MenuItem>
     </Menu>
 
