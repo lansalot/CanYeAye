@@ -144,3 +144,5 @@ git push origin v0.1.3
   from SavvyCAN's `can_structs.h`, which in turn derives from Qt's `QCanBusFrame`
   (LGPL/GPL family); see `AGENTS.md` for the licensing note before distributing binaries.
 - Development notes and the reference protocol research live in `AGENTS.md` and `docs/research/`.
+
+
