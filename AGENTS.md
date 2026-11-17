@@ -6,7 +6,7 @@ connectivity and same log/DBC file formats.
 
 Reference implementation lives at `C:\Github\SavvyCAN`.
 
-**Hard rule: never modify `C:\Github\SavvyCAN` or anything outside `C:\Github\WinCAN` without
+**Hard rule: never modify `C:\Github\SavvyCAN` or anything outside `C:\Github\CanYeAye` without
 explicit permission.** The reference repo is read-only; read it freely.
 
 ## Locked decisions
