@@ -13,6 +13,7 @@ public sealed class CanConnectionManager : IAsyncDisposable
     private readonly List<Entry> _entries = [];
     private readonly Dictionary<ICanConnection, EventHandler<CanFrame>> _frameHandlers = [];
     private readonly Dictionary<ICanConnection, EventHandler> _busHandlers = [];
+    private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private int _nextBus;
 
     public event EventHandler<CanFrame>? FrameReceived;
@@ -105,7 +106,12 @@ public sealed class CanConnectionManager : IAsyncDisposable
         Detach(connection);
     }
 
-    /// <summary>Sends a frame on the global bus number stored in <see cref="CanFrame.Bus"/>.</summary>
+    /// <summary>
+    /// Sends a frame on the global bus number stored in <see cref="CanFrame.Bus"/>. When no
+    /// connection owns that bus the frame is published as a received frame instead, matching
+    /// SavvyCAN (<c>CANConManager::buslessFrames</c>): scripts and the send window still produce
+    /// traffic in the frame log on a machine with no live bus.
+    /// </summary>
     public async Task SendFrameAsync(CanFrame frame, CancellationToken cancellationToken = default)
     {
         Entry? entry;
@@ -116,13 +122,26 @@ public sealed class CanConnectionManager : IAsyncDisposable
 
         if (entry is null)
         {
-            throw new InvalidOperationException($"No connection owns bus {frame.Bus}.");
+            PublishBusless(frame);
+            return;
         }
 
         var localBus = frame.Bus - entry.FirstBus;
         var copy = frame.Clone();
         copy.Bus = (byte)localBus;
         await entry.Connection.SendFrameAsync(localBus, copy, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Echoes a frame that no connection owns into <see cref="FrameReceived"/>, the way SavvyCAN
+    /// replays <c>buslessFrames</c>. Timestamps are stamped at emit time so the log shows usable
+    /// intervals instead of a column of zeroes.
+    /// </summary>
+    private void PublishBusless(CanFrame frame)
+    {
+        var local = frame.Clone();
+        local.Timestamp = FrameTimestamp.FromMicroseconds(_clock.Elapsed.Ticks / 10);
+        FrameReceived?.Invoke(this, local);
     }
 
     public async Task DisconnectAllAsync()

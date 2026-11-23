@@ -1016,6 +1016,17 @@ it). Negative `bus` becomes a huge `uint32`.
    `setBitrateSwitch(brs.toBool())`
 5. extended when `id > 0x7FF`
 
+### Sends with no owning connection
+
+`CANConManager::sendFrame` queues frames in `buslessFrames` when no connection exists and the
+connection timer later replays them through `framesReceived` (two-arg overload with a null
+connection). Script sends therefore never fail and show up in the frame log even on a machine
+with no adapter attached. CanYeAye `CanConnectionManager.SendFrameAsync` behaves the same way:
+if no attached connection covers the global bus, the frame is published through `FrameReceived`
+instead of throwing, so the script log stays free of "no connection owns bus" warnings. The
+echo is stamped with the manager's elapsed time and is marked as received (SavvyCAN leaves
+`localEcho` false for busless frames).
+
 ## 12.4 `isotp`
 
 | Member | Behaviour |

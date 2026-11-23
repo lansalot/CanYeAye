@@ -158,7 +158,8 @@ fails the gate produces no build, package or release.
   segmented TX), UDS (`UdsHandler`) and OBD-II (full Mode 01 PID table, `Obd2Dbc` generator,
   `Obd2Poller`). `CanYeAye.Core.Scripting.ScriptHost` runs SavvyCAN `.js` files on Jint with the
   `host`/`can`/`isotp`/`uds` globals and positional callbacks; all four `examples/*.js` run
-  unmodified.
+  unmodified. Script frames sent on a bus with no owning connection are echoed into the frame log
+  like SavvyCAN's `buslessFrames`, so they need no live adapter.
 - `CanYeAye.App` (Avalonia): main window with the SavvyCAN right-hand frame panel (total/FPS,
   suspend, normalize, clear, keep-filters, auto-scroll, overwrite mode with counts, interpret
   frames, expand/collapse, bus filtering), reorderable/hideable grid columns (incl. ASCII),
