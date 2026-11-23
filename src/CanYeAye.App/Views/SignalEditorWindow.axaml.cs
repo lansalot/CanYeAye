@@ -18,6 +18,7 @@ public partial class SignalEditorWindow : Window
     private readonly SignalEditorViewModel _viewModel;
     private readonly WindowGeometry _geometry;
     private bool _loading;
+    private bool _refreshQueued;
 
     public SignalEditorWindow()
     {
@@ -44,7 +45,24 @@ public partial class SignalEditorWindow : Window
         };
     }
 
-    private void OnSignalChanged() => RefreshAll();
+    /// <summary>
+    /// Deferred: a combo box raises SelectionChanged from inside its own selection model update,
+    /// and rebuilding the item list synchronously there throws in Avalonia.
+    /// </summary>
+    private void OnSignalChanged()
+    {
+        if (_refreshQueued)
+        {
+            return;
+        }
+
+        _refreshQueued = true;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            _refreshQueued = false;
+            RefreshAll();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+    }
 
     private void RefreshAll()
     {
@@ -97,19 +115,23 @@ public partial class SignalEditorWindow : Window
 
     private void FillReceiverCombo(DbcSignal signal)
     {
-        var selected = signal.Receiver?.Name;
-        ReceiverCombo.Items.Clear();
-        foreach (var node in _viewModel.Nodes)
+        var names = _viewModel.Nodes.Select(node => node.Name).ToList();
+        var existing = ReceiverCombo.Items.Cast<object?>().OfType<string>().ToList();
+        if (!names.SequenceEqual(existing, StringComparer.Ordinal))
         {
-            ReceiverCombo.Items.Add(node.Name);
+            ReceiverCombo.Items.Clear();
+            foreach (var name in names)
+            {
+                ReceiverCombo.Items.Add(name);
+            }
         }
 
-        if (selected is not null)
+        var selected = signal.Receiver?.Name;
+        if (selected is not null && ReceiverCombo.Items.Contains(selected))
         {
             ReceiverCombo.SelectedItem = selected;
         }
-
-        if (ReceiverCombo.SelectedItem is null && ReceiverCombo.ItemCount > 0)
+        else if (ReceiverCombo.ItemCount > 0)
         {
             ReceiverCombo.SelectedIndex = 0;
         }
@@ -117,17 +139,23 @@ public partial class SignalEditorWindow : Window
 
     private void FillMultiplexParentCombo(DbcSignal signal)
     {
-        MultiplexParentCombo.Items.Clear();
-        MultiplexParentCombo.Items.Add("(none)");
-        foreach (var candidate in _viewModel.Message.Signals.Values)
+        var names = new List<string> { "(none)" };
+        names.AddRange(_viewModel.Message.Signals.Values
+            .Where(candidate => candidate != signal && candidate.IsMultiplexor)
+            .Select(candidate => candidate.Name));
+
+        var existing = MultiplexParentCombo.Items.Cast<object?>().OfType<string>().ToList();
+        if (!names.SequenceEqual(existing, StringComparer.Ordinal))
         {
-            if (candidate != signal && candidate.IsMultiplexor)
+            MultiplexParentCombo.Items.Clear();
+            foreach (var name in names)
             {
-                MultiplexParentCombo.Items.Add(candidate.Name);
+                MultiplexParentCombo.Items.Add(name);
             }
         }
 
-        MultiplexParentCombo.SelectedItem = signal.MultiplexParent?.Name ?? "(none)";
+        var current = signal.MultiplexParent?.Name ?? "(none)";
+        MultiplexParentCombo.SelectedItem = MultiplexParentCombo.Items.Contains(current) ? current : "(none)";
     }
 
     private void OnNameLostFocus(object? sender, RoutedEventArgs e) => CommitName();
@@ -312,7 +340,6 @@ public partial class SignalEditorWindow : Window
         }
 
         _viewModel.CommitReceiver(ReceiverCombo.SelectedItem as string);
-        RefreshAll();
     }
 
     private void OnMultiplexModeChanged(object? sender, RoutedEventArgs e)
@@ -364,8 +391,6 @@ public partial class SignalEditorWindow : Window
         {
             _viewModel.CommitMultiplexParent(name);
         }
-
-        RefreshAll();
     }
 
     private void OnBitClicked(object? sender, BitGridClickEventArgs e)

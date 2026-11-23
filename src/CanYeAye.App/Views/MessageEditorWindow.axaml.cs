@@ -16,6 +16,7 @@ public partial class MessageEditorWindow : Window
     private readonly MessageEditorViewModel _viewModel;
     private readonly WindowGeometry _geometry;
     private bool _loading;
+    private bool _refreshQueued;
 
     public MessageEditorWindow()
     {
@@ -42,7 +43,24 @@ public partial class MessageEditorWindow : Window
         };
     }
 
-    private void OnMessageChanged() => RefreshAll();
+    /// <summary>
+    /// Deferred: a combo box raises SelectionChanged from inside its own selection model update,
+    /// and rebuilding the item list synchronously there throws in Avalonia.
+    /// </summary>
+    private void OnMessageChanged()
+    {
+        if (_refreshQueued)
+        {
+            return;
+        }
+
+        _refreshQueued = true;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            _refreshQueued = false;
+            RefreshAll();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+    }
 
     private void RefreshAll()
     {
@@ -62,10 +80,15 @@ public partial class MessageEditorWindow : Window
             TextColorPicker.Color = Parse(message.ForegroundColor, Colors.Black);
             BackgroundColorPicker.Color = Parse(message.BackgroundColor, Colors.White);
 
-            SenderCombo.Items.Clear();
-            foreach (var node in _viewModel.Nodes)
+            var names = _viewModel.Nodes.Select(node => node.Name).ToList();
+            var existing = SenderCombo.Items.Cast<object?>().OfType<string>().ToList();
+            if (!names.SequenceEqual(existing, StringComparer.Ordinal))
             {
-                SenderCombo.Items.Add(node.Name);
+                SenderCombo.Items.Clear();
+                foreach (var name in names)
+                {
+                    SenderCombo.Items.Add(name);
+                }
             }
 
             SenderCombo.SelectedItem = message.Sender?.Name;
