@@ -104,7 +104,7 @@ git push origin v0.1.3
   unmerged branches or side commits never reach the build; merge into `main` first, then
   move/re-push the tag.
 - **build-test** (windows-latest, .NET 10.0.404): restore (NuGet cache), Release build and
-  `dotnet test` (314 tests). Needs `tag-on-main`.
+  `dotnet test` (308 tests). Needs `tag-on-main`.
 - **publish**: self-contained `win-x64` (zip), `linux-x64` (tar.gz) and `osx-arm64`
   (`CanYeAye.app` bundle, ad-hoc signed, zipped by `build/macos/package-app.sh`) artifacts, one
   runner per RID. The tag (without the leading `v`) becomes the assembly/package version.
@@ -226,6 +226,7 @@ fails the gate produces no build, package or release.
 
 ### Next session
 
+- DBC editor follow-up: port the signal editor undo stack (Ctrl+Z) from dbcsignaleditor.cpp.
 - Verify the node graph's pinch-zoom and long-press naming on a real touchscreen (the control
   tracks touch pointers manually).
 - Optional Flow View follow-ups: hover readout on the byte graph, remembering the last selected
