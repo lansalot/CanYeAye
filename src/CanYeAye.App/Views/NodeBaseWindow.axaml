@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="CanYeAye.App.Views.NodeBaseWindow"
+        x:CompileBindings="False"
+        Width="480" Height="280"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="Rebase All Node Messages">
+  <Grid Margin="14" RowDefinitions="Auto,Auto,Auto,*,Auto" ColumnDefinitions="Auto,*">
+    <TextBlock Grid.Row="0" Grid.Column="0" x:Name="NewNameLabel" Text="New Node Name:" VerticalAlignment="Center"
+               Margin="0,6,10,6" IsVisible="False" />
+    <TextBox Grid.Row="0" Grid.Column="1" x:Name="NewNameBox" Margin="0,4" IsVisible="False" />
+
+    <TextBlock Grid.Row="1" Grid.Column="0" Text="Node Name:" VerticalAlignment="Center" Margin="0,6,10,6" />
+    <TextBox Grid.Row="1" Grid.Column="1" x:Name="NodeNameBox" Margin="0,4" IsReadOnly="True" />
+
+    <TextBlock Grid.Row="2" Grid.Column="0" Text="Current Base ID:" VerticalAlignment="Center" Margin="0,6,10,6" />
+    <TextBox Grid.Row="2" Grid.Column="1" x:Name="CurrentBaseBox" Margin="0,4" IsReadOnly="True" />
+
+    <TextBlock Grid.Row="3" Grid.Column="0" Text="New Base ID:" VerticalAlignment="Top" Margin="0,12,10,6" />
+    <StackPanel Grid.Row="3" Grid.Column="1" Spacing="6">
+      <TextBox x:Name="NewBaseBox" Margin="0,4" />
+      <TextBlock x:Name="ErrorText" Foreground="#C0392B" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal"
+                HorizontalAlignment="Right" Spacing="8">
+      <Button x:Name="ApplyButton" Content="Rebase All Messages in Node" Click="OnApplyClick" />
+      <Button Content="Cancel" Width="90" Click="OnCancelClick" />
+    </StackPanel>
+  </Grid>
+</Window>

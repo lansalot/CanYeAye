@@ -204,6 +204,83 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
         return file?.TryGetLocalPath();
     }
 
+    public async Task<string?> PickSaveDbcAsync(string suggestedName)
+    {
+        var storage = topLevel()?.StorageProvider;
+        if (storage is null)
+        {
+            return null;
+        }
+
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save DBC file",
+            SuggestedFileName = suggestedName,
+            DefaultExtension = "dbc",
+            FileTypeChoices = [DbcFiles, AllFiles],
+        });
+
+        return file?.TryGetLocalPath();
+    }
+
+    public async Task<bool> ConfirmAsync(string title, string message)
+    {
+        var accepted = false;
+        var window = new Window
+        {
+            Title = title,
+            Width = 460,
+            Height = 200,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new StackPanel
+            {
+                Margin = new Avalonia.Thickness(16),
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 8,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Children =
+                        {
+                            new Button { Content = "Cancel", Width = 90 },
+                            new Button { Content = "OK", Width = 90 },
+                        },
+                    },
+                },
+            },
+        };
+
+        if (window.Content is StackPanel panel && panel.Children[1] is StackPanel buttons)
+        {
+            ((Button)buttons.Children[0]).Click += (_, _) => window.Close();
+            ((Button)buttons.Children[1]).Click += (_, _) =>
+            {
+                accepted = true;
+                window.Close();
+            };
+        }
+
+        var owner = topLevel() as Window;
+        if (owner is not null && owner.IsVisible)
+        {
+            await window.ShowDialog(owner);
+        }
+        else
+        {
+            var closed = new TaskCompletionSource();
+            window.Closed += (_, _) => closed.TrySetResult();
+            window.Show();
+            await closed.Task;
+        }
+
+        return accepted;
+    }
+
     public async Task ShowMessageAsync(string title, string message)    {
         var window = new Window
         {

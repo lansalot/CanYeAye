@@ -98,6 +98,31 @@ public partial class MainWindow : Window
         _viewModel.FlowWindowX = _settings.FlowWindowX;
         _viewModel.FlowWindowY = _settings.FlowWindowY;
 
+        _viewModel.DbcWindows.Editor.Width = _settings.DbcEditorWindowWidth;
+        _viewModel.DbcWindows.Editor.Height = _settings.DbcEditorWindowHeight;
+        _viewModel.DbcWindows.Editor.X = _settings.DbcEditorWindowX;
+        _viewModel.DbcWindows.Editor.Y = _settings.DbcEditorWindowY;
+
+        _viewModel.DbcWindows.Signal.Width = _settings.DbcSignalWindowWidth;
+        _viewModel.DbcWindows.Signal.Height = _settings.DbcSignalWindowHeight;
+        _viewModel.DbcWindows.Signal.X = _settings.DbcSignalWindowX;
+        _viewModel.DbcWindows.Signal.Y = _settings.DbcSignalWindowY;
+
+        _viewModel.DbcWindows.Message.Width = _settings.DbcMessageWindowWidth;
+        _viewModel.DbcWindows.Message.Height = _settings.DbcMessageWindowHeight;
+        _viewModel.DbcWindows.Message.X = _settings.DbcMessageWindowX;
+        _viewModel.DbcWindows.Message.Y = _settings.DbcMessageWindowY;
+
+        _viewModel.DbcWindows.Node.Width = _settings.DbcNodeWindowWidth;
+        _viewModel.DbcWindows.Node.Height = _settings.DbcNodeWindowHeight;
+        _viewModel.DbcWindows.Node.X = _settings.DbcNodeWindowX;
+        _viewModel.DbcWindows.Node.Y = _settings.DbcNodeWindowY;
+
+        _viewModel.DbcWindows.NodeBase.Width = _settings.DbcNodeBaseWindowWidth;
+        _viewModel.DbcWindows.NodeBase.Height = _settings.DbcNodeBaseWindowHeight;
+        _viewModel.DbcWindows.NodeBase.X = _settings.DbcNodeBaseWindowX;
+        _viewModel.DbcWindows.NodeBase.Y = _settings.DbcNodeBaseWindowY;
+
         _viewModel.FrameInfoWindowWidth = _settings.FrameInfoWindowWidth;
         _viewModel.FrameInfoWindowHeight = _settings.FrameInfoWindowHeight;
         _viewModel.FrameInfoWindowX = _settings.FrameInfoWindowX;
@@ -196,6 +221,26 @@ public partial class MainWindow : Window
                 FrameInfoWindowHeight = _viewModel.FrameInfoWindowHeight,
                 FrameInfoWindowX = _viewModel.FrameInfoWindowX,
                 FrameInfoWindowY = _viewModel.FrameInfoWindowY,
+                DbcEditorWindowWidth = _viewModel.DbcWindows.Editor.Width,
+                DbcEditorWindowHeight = _viewModel.DbcWindows.Editor.Height,
+                DbcEditorWindowX = _viewModel.DbcWindows.Editor.X,
+                DbcEditorWindowY = _viewModel.DbcWindows.Editor.Y,
+                DbcSignalWindowWidth = _viewModel.DbcWindows.Signal.Width,
+                DbcSignalWindowHeight = _viewModel.DbcWindows.Signal.Height,
+                DbcSignalWindowX = _viewModel.DbcWindows.Signal.X,
+                DbcSignalWindowY = _viewModel.DbcWindows.Signal.Y,
+                DbcMessageWindowWidth = _viewModel.DbcWindows.Message.Width,
+                DbcMessageWindowHeight = _viewModel.DbcWindows.Message.Height,
+                DbcMessageWindowX = _viewModel.DbcWindows.Message.X,
+                DbcMessageWindowY = _viewModel.DbcWindows.Message.Y,
+                DbcNodeWindowWidth = _viewModel.DbcWindows.Node.Width,
+                DbcNodeWindowHeight = _viewModel.DbcWindows.Node.Height,
+                DbcNodeWindowX = _viewModel.DbcWindows.Node.X,
+                DbcNodeWindowY = _viewModel.DbcWindows.Node.Y,
+                DbcNodeBaseWindowWidth = _viewModel.DbcWindows.NodeBase.Width,
+                DbcNodeBaseWindowHeight = _viewModel.DbcWindows.NodeBase.Height,
+                DbcNodeBaseWindowX = _viewModel.DbcWindows.NodeBase.X,
+                DbcNodeBaseWindowY = _viewModel.DbcWindows.NodeBase.Y,
                 FrameFilterHost = _lastFrameFilterHost.ToString(),
             });
         }
@@ -516,7 +561,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var viewModel = new DbcManagerViewModel(_viewModel.Dbc, _viewModel.FileDialogs, _viewModel.OnDbcChanged);
+        var viewModel = new DbcManagerViewModel(_viewModel.Dbc, _viewModel.FileDialogs, _viewModel.OnDbcChanged, _viewModel.DbcWindows);
         _dbcManagerWindow = new Views.DbcManagerWindow(viewModel);
         _dbcManagerWindow.Closed += (_, _) => _dbcManagerWindow = null;
         _dbcManagerWindow.Show(this);

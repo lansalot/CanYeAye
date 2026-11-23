@@ -1,0 +1,106 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CanYeAye.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="CanYeAye.App.Views.DbcEditorWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:DbcEditorViewModel"
+        Width="680" Height="800"
+        MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        Title="DBC Editing Window">
+  <Window.Styles>
+    <Style Selector="Button.tool">
+      <Setter Property="Width" Value="92" />
+      <Setter Property="Height" Value="62" />
+      <Setter Property="Padding" Value="4" />
+    </Style>
+    <Style Selector="TextBlock.toolGlyph">
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.toolLabel">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Padding="8" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <StackPanel Spacing="8">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Classes="tool" Click="OnNewNode" ToolTip.Tip="Add a new node">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="toolGlyph" Text="+" />
+              <TextBlock Classes="toolLabel" Text="New Node" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tool" Click="OnNewMessage" ToolTip.Tip="Add a message under the selected node or message">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="toolGlyph" Text="&#x2709;" />
+              <TextBlock Classes="toolLabel" Text="New Message" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tool" Click="OnNewSignal" ToolTip.Tip="Add a signal under the selected message">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="toolGlyph" Text="&#x223F;" />
+              <TextBlock Classes="toolLabel" Text="New Signal" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tool" Click="OnDelete" ToolTip.Tip="Delete the selected node, message or signal">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="toolGlyph" Text="&#x2716;" />
+              <TextBlock Classes="toolLabel" Text="Delete" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="Find:" VerticalAlignment="Center" />
+          <TextBox x:Name="SearchBox" Width="260" KeyDown="OnSearchKeyDown" />
+          <Button Content="Search" Click="OnSearch" />
+          <Button Content="Next" Click="OnSearchNext" />
+          <Button Content="Previous" Click="OnSearchPrevious" />
+          <TextBlock x:Name="SearchPosText" VerticalAlignment="Center" Opacity="0.75" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Padding="8">
+      <Button Content="Close" Width="90" HorizontalAlignment="Right" Click="OnCloseClick" />
+    </Border>
+
+    <TreeView x:Name="Tree" ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+              DoubleTapped="OnTreeDoubleTapped" PointerPressed="OnTreePointerPressed" KeyDown="OnTreeKeyDown">
+      <TreeView.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="Edit..." Click="OnEditItem" />
+          <Separator />
+          <MenuItem Header="Rebase all messages in node..." Click="OnRebaseNode" />
+          <MenuItem Header="Duplicate node..." Click="OnDuplicateNode" />
+          <Separator />
+          <MenuItem Header="Delete" Click="OnDelete" />
+        </ContextMenu>
+      </TreeView.ContextMenu>
+      <TreeView.Styles>
+        <Style Selector="TreeViewItem">
+          <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+        </Style>
+      </TreeView.Styles>
+      <TreeView.ItemTemplate>
+        <TreeDataTemplate ItemsSource="{Binding Children}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Border Background="{Binding BadgeBrush}" Width="18" Height="18" CornerRadius="3"
+                    VerticalAlignment="Center">
+              <TextBlock Text="{Binding Badge}" Foreground="White" FontSize="10"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
+          </StackPanel>
+        </TreeDataTemplate>
+      </TreeView.ItemTemplate>
+    </TreeView>
+  </DockPanel>
+</Window>

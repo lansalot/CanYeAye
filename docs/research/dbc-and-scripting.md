@@ -1313,3 +1313,48 @@ and **do not** change the four argument shapes.
 Cross-cutting constraints from AGENTS.md that apply here: timestamps stay `secs + usecs` (never
 `DateTime`); frames are not limited to 8 bytes (`len` up to 254); do not read or write SavvyCAN
 registry keys; scripting must run existing SavvyCAN `.js` files unchanged.
+
+---
+
+# 15. Editor windows
+
+The editing surface (`dbc\dbcmaineditor.cpp`, `dbcsignaleditor.cpp`, `dbcmessageeditor.cpp`,
+`dbcnodeeditor.cpp`, `dbcnoderebaseeditor.cpp`, `dbcnodeduplicateeditor.cpp`) is ported as:
+
+| Reference | CanYeAye |
+|---|---|
+| `DBCMainEditor` tree + toolbar + search | `Views/DbcEditorWindow.axaml`, `ViewModels/DbcEditorViewModel.cs` |
+| `DBCSignalEditor` + `CANDataGrid` signal view | `Views/SignalEditorWindow.axaml`, `ViewModels/SignalEditorViewModel.cs`, `Controls/DbcBitGrid.cs` |
+| `DBCMessageEditor` | `Views/MessageEditorWindow.axaml`, `ViewModels/MessageEditorViewModel.cs` |
+| `DBCNodeEditor` | `Views/NodeEditorWindow.axaml` |
+| `DBCNodeRebaseEditor` / `DBCNodeDuplicateEditor` | one `Views/NodeBaseWindow.axaml` with a direction flag |
+| `DBCFile` mutation helpers | `Core/Dbc/DbcEditor.cs` (add/delete node/message/signal, ID re-key, clone, multiplex links, rebase/duplicate, bit positions) |
+
+Behaviour notes and deviations:
+
+* Edits apply to the shared `DbcFile` immediately and mark it dirty; saving is explicit through
+  **Save** in the DBC files window (`DbcFileWriter.Save`), which also asks for a path for files
+  that were never saved. SavvyCAN has no save control in the editor either.
+* The tree shows nodes → messages → signals, with multiplex hierarchies nested under their
+  multiplexor. Double-click opens the matching editor. The context menu offers Edit, Rebase,
+  Duplicate and Delete; Delete also answers the Delete key and asks for confirmation.
+* Search is the reference's contains + Search/Next/Previous with a "Search Results: x of y" label.
+* The node and message editors have no OK button in the reference (live edits, close to finish);
+  CanYeAye adds an explicit Close button. The signal editor likewise commits on focus loss / Enter.
+* The multiplex form has **one** "Multiplex value" field (`1;2;5-7`, semicolons), matching the
+  current `txtMultiplexValues` code rather than the older two-field screenshot.
+* The bit grid draws 8-byte blocks with bit 7 leftmost, hatches the current signal green, rings the
+  start bit, and fills bits owned by other signals with a stable per-signal colour. Left-click sets
+  the start bit; right-click switches editing to the signal that owns the clicked bit.
+* Value tables keep a trailing blank row; editing it appends the entry. Row delete is on the grid
+  context menu, hex/decimal display on the value column header context menu, exactly as the
+  reference.
+* Text fields are simplified to underscore-separated identifiers (name/unit/comment/value text),
+  matching `QString::simplified().replace(' ', '_')`.
+* Colours use `Avalonia.Controls.ColorPicker` rather than `QColorDialog` and write
+  `GenMsgForegroundColor` / `GenMsgBackgroundColor` attributes. The missing attribute is created
+  on first use.
+* Geometry of the editor and its child dialogs persists in the app settings
+  (`DbcEditorWindow*`, `DbcSignalWindow*`, `DbcMessageWindow*`, `DbcNodeWindow*`,
+  `DbcNodeBaseWindow*`), like the other tool windows.
+* Deviation: the signal undo stack (Ctrl+Z) is not ported yet.

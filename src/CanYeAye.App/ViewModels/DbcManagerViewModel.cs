@@ -22,6 +22,14 @@ public partial class DbcFileEntry : ObservableObject
     public int SignalCount => File.Messages.Values.Sum(message => message.Signals.Count);
 
     public string FilePath => File.FilePath;
+
+    public void Refresh()
+    {
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(MessageCount));
+        OnPropertyChanged(nameof(SignalCount));
+        OnPropertyChanged(nameof(FilePath));
+    }
 }
 
 /// <summary>
@@ -34,11 +42,12 @@ public partial class DbcManagerViewModel : ObservableObject
     private readonly IFileDialogService _dialogs;
     private readonly Action _changed;
 
-    public DbcManagerViewModel(DbcDatabase database, IFileDialogService dialogs, Action changed)
+    public DbcManagerViewModel(DbcDatabase database, IFileDialogService dialogs, Action changed, DbcWindowState? windows = null)
     {
         _database = database;
         _dialogs = dialogs;
         _changed = changed;
+        Windows = windows ?? new DbcWindowState();
 
         foreach (var file in database.LoadedFiles)
         {
@@ -48,6 +57,8 @@ public partial class DbcManagerViewModel : ObservableObject
         Renumber();
         SelectedFile = Files.FirstOrDefault();
     }
+
+    public DbcWindowState Windows { get; }
 
     public ObservableCollection<DbcFileEntry> Files { get; } = [];
 
@@ -153,6 +164,59 @@ public partial class DbcManagerViewModel : ObservableObject
         _database.LoadedFiles.Clear();
         SelectedFile = null;
         _changed();
+    }
+
+    /// <summary>Refresh row counts and let the main window pick up edits made in the editor.</summary>
+    public void NotifyEdited()
+    {
+        foreach (var entry in Files)
+        {
+            entry.Refresh();
+        }
+
+        _changed();
+    }
+
+    /// <summary>Writes every loaded file back to disk (asking for a path for unsaved files).</summary>
+    [RelayCommand]
+    private async Task SaveAsync()
+    {
+        var errors = new List<string>();
+        var saved = 0;
+
+        foreach (var entry in Files.ToArray())
+        {
+            var file = entry.File;
+            var path = string.IsNullOrWhiteSpace(file.FilePath)
+                ? await _dialogs.PickSaveDbcAsync(file.FileName)
+                : Path.Combine(file.FilePath, file.FileName);
+
+            if (string.IsNullOrEmpty(path))
+            {
+                continue;
+            }
+
+            try
+            {
+                DbcFileWriter.Save(file, path);
+                entry.Refresh();
+                saved++;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                errors.Add($"{file.FileName}: {ex.Message}");
+            }
+        }
+
+        if (saved > 0)
+        {
+            _changed();
+        }
+
+        if (errors.Count > 0)
+        {
+            await _dialogs.ShowMessageAsync("DBC save", string.Join(Environment.NewLine, errors));
+        }
     }
 
     private void Renumber()

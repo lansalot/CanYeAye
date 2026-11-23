@@ -139,6 +139,20 @@ fails the gate produces no build, package or release.
   (copied to `tests/CanYeAye.Tests/Fixtures/DbcSamples`); both folders are git-ignored, so
   `DbcSampleValidationTests` only exercises whatever is present locally and is a no-op in a
   fresh clone or on CI.
+- DBC editing (parity with `dbc/dbcmaineditor` + the child editors): `Core.Dbc.DbcEditor` holds
+  the mutation operations (add/delete node/message/signal, ID re-key, signal clone, multiplex
+  links, rebase/duplicate, sawtooth bit positions) with 26 xUnit tests. The UI is
+  `DbcEditorWindow` (tree, New Node/Message/Signal, Delete with confirmation, Find/Next/Previous,
+  context menu with Edit/Rebase/Duplicate/Delete, double-click to edit), `SignalEditorWindow`
+  (custom `DbcBitGrid`: 8-byte blocks, LSB0 numbering, green hatch for the current signal, start
+  bit ring, per-signal colours and names, left-click start bit, right-click switch signal; all
+  form fields; multiplex mode + values + parent; value table with trailing blank row, hex/decimal
+  header menu and row delete), `MessageEditorWindow` (ID/name/length/CAN FD/BRS/extended/sender
+  with free-text node creation, colour pickers writing `GenMsgForegroundColor`/
+  `GenMsgBackgroundColor`, coloured sample) and `NodeEditorWindow` plus the shared rebase /
+  duplicate dialog. The DBC files window gains Edit (double-click) and Save; editor geometry is
+  saved with the other window geometry. Design notes: `docs/research/dbc-and-scripting.md`
+  section 15.
 - `CanYeAye.Core.Protocols`: ISO-TP transport (`IsoTpHandler`, single/multi-frame, flow control,
   segmented TX), UDS (`UdsHandler`) and OBD-II (full Mode 01 PID table, `Obd2Dbc` generator,
   `Obd2Poller`). `CanYeAye.Core.Scripting.ScriptHost` runs SavvyCAN `.js` files on Jint with the

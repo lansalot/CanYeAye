@@ -87,6 +87,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     public DbcDatabase Dbc { get; } = new();
 
+    /// <summary>Saved geometry of the DBC editor windows (shared with the main window's settings).</summary>
+    public DbcWindowState DbcWindows { get; } = new();
+
     public LogBus LogBus { get; } = new();
 
     public IFileDialogService? FileDialogs { get; set; }

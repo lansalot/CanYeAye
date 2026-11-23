@@ -106,6 +106,46 @@ public sealed record AppSettings
 
     public int FrameInfoWindowY { get; init; } = int.MinValue;
 
+    public double DbcEditorWindowWidth { get; init; } = 680;
+
+    public double DbcEditorWindowHeight { get; init; } = 800;
+
+    public int DbcEditorWindowX { get; init; } = int.MinValue;
+
+    public int DbcEditorWindowY { get; init; } = int.MinValue;
+
+    public double DbcSignalWindowWidth { get; init; } = 1150;
+
+    public double DbcSignalWindowHeight { get; init; } = 930;
+
+    public int DbcSignalWindowX { get; init; } = int.MinValue;
+
+    public int DbcSignalWindowY { get; init; } = int.MinValue;
+
+    public double DbcMessageWindowWidth { get; init; } = 430;
+
+    public double DbcMessageWindowHeight { get; init; } = 620;
+
+    public int DbcMessageWindowX { get; init; } = int.MinValue;
+
+    public int DbcMessageWindowY { get; init; } = int.MinValue;
+
+    public double DbcNodeWindowWidth { get; init; } = 400;
+
+    public double DbcNodeWindowHeight { get; init; } = 210;
+
+    public int DbcNodeWindowX { get; init; } = int.MinValue;
+
+    public int DbcNodeWindowY { get; init; } = int.MinValue;
+
+    public double DbcNodeBaseWindowWidth { get; init; } = 480;
+
+    public double DbcNodeBaseWindowHeight { get; init; } = 280;
+
+    public int DbcNodeBaseWindowX { get; init; } = int.MinValue;
+
+    public int DbcNodeBaseWindowY { get; init; } = int.MinValue;
+
     public List<ColumnLayout> Columns { get; init; } = [];
 }
 

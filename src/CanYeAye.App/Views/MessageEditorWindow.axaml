@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:CanYeAye.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="CanYeAye.App.Views.MessageEditorWindow"
+        x:CompileBindings="False"
+        x:DataType="vm:MessageEditorViewModel"
+        Width="430" Height="620"
+        MinWidth="380" MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        Title="Message Editor">
+  <Window.Styles>
+    <Style Selector="TextBlock.fieldLabel">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,6,10,6" />
+    </Style>
+    <Style Selector="TextBox.field">
+      <Setter Property="Margin" Value="0,4" />
+      <Setter Property="MinHeight" Value="26" />
+    </Style>
+    <Style Selector="ComboBox.field">
+      <Setter Property="Margin" Value="0,4" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="12">
+    <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,10,0,0">
+      <TextBlock x:Name="ErrorText" Foreground="#C0392B" TextWrapping="Wrap" />
+      <Button Content="Close" Width="90" HorizontalAlignment="Right" Click="OnCloseClick" />
+    </StackPanel>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*"
+          ColumnDefinitions="Auto,*">
+      <TextBlock Grid.Row="0" Grid.Column="0" Classes="fieldLabel" Text="Frame ID:" />
+      <TextBox Grid.Row="0" Grid.Column="1" x:Name="FrameIdBox" Classes="field"
+               LostFocus="OnFrameIdLostFocus" KeyDown="OnFrameIdKeyDown" />
+
+      <TextBlock Grid.Row="1" Grid.Column="0" Classes="fieldLabel" Text="Frame Type:" />
+      <CheckBox Grid.Row="1" Grid.Column="1" x:Name="ExtendedCheck" Content="Extended"
+                IsCheckedChanged="OnExtendedChanged" Margin="0,4" />
+
+      <TextBlock Grid.Row="2" Grid.Column="0" Classes="fieldLabel" Text="Message Name:" />
+      <TextBox Grid.Row="2" Grid.Column="1" x:Name="NameBox" Classes="field"
+               LostFocus="OnNameLostFocus" KeyDown="OnNameKeyDown" />
+
+      <TextBlock Grid.Row="3" Grid.Column="0" Classes="fieldLabel" Text="Frame Length:" />
+      <TextBox Grid.Row="3" Grid.Column="1" x:Name="LengthBox" Classes="field"
+               LostFocus="OnLengthLostFocus" KeyDown="OnLengthKeyDown" />
+
+      <TextBlock Grid.Row="4" Grid.Column="0" Classes="fieldLabel" Text="CAN FD:" />
+      <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,4" Spacing="2">
+        <CheckBox x:Name="CanFdCheck" Content="CAN FD frame" IsCheckedChanged="OnCanFdChanged" />
+        <CheckBox x:Name="BrsCheck" Content="Bit rate switch"
+                  ToolTip.Tip="The data phase uses the faster data rate" IsCheckedChanged="OnBrsChanged" />
+      </StackPanel>
+
+      <TextBlock Grid.Row="5" Grid.Column="0" Classes="fieldLabel" Text="Text Color:" />
+      <ColorPicker Grid.Row="5" Grid.Column="1" x:Name="TextColorPicker" Margin="0,4"
+                   IsAlphaEnabled="False" ColorChanged="OnTextColorChanged" />
+
+      <TextBlock Grid.Row="6" Grid.Column="0" Classes="fieldLabel" Text="Background Color:" />
+      <ColorPicker Grid.Row="6" Grid.Column="1" x:Name="BackgroundColorPicker" Margin="0,4"
+                   IsAlphaEnabled="False" ColorChanged="OnBackgroundColorChanged" />
+
+      <TextBlock Grid.Row="7" Grid.Column="0" Classes="fieldLabel" Text="Sending Node:" />
+      <ComboBox Grid.Row="7" Grid.Column="1" x:Name="SenderCombo" Classes="field" IsEditable="True"
+                SelectionChanged="OnSenderChanged" LostFocus="OnSenderLostFocus" />
+
+      <TextBlock Grid.Row="8" Grid.Column="0" Classes="fieldLabel" Text="Comments:" />
+      <TextBox Grid.Row="8" Grid.Column="1" x:Name="CommentBox" Classes="field" LostFocus="OnCommentLostFocus" />
+
+      <TextBlock Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" Text="Sample Colored Output:" Margin="0,10,0,4" />
+      <ListBox Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2" Height="60" DataContext="{Binding}">
+        <ListBoxItem>
+          <TextBlock Text="Test String" Padding="8,4"
+                     Foreground="{Binding SampleForeground}"
+                     Background="{Binding SampleBackground}" />
+        </ListBoxItem>
+      </ListBox>
+    </Grid>
+  </DockPanel>
+</Window>
