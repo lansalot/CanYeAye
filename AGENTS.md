@@ -142,7 +142,8 @@ fails the gate produces no build, package or release.
 - DBC editing (parity with `dbc/dbcmaineditor` + the child editors): `Core.Dbc.DbcEditor` holds
   the mutation operations (add/delete node/message/signal, ID re-key, signal clone, multiplex
   links, rebase/duplicate, sawtooth bit positions) with 26 xUnit tests. The UI is
-  `DbcEditorWindow` (tree, New Node/Message/Signal, Delete with confirmation, Find/Next/Previous,
+  `DbcEditorWindow` (tree, Expand All/Collapse All, New Node/Message/Signal, Delete with
+  confirmation, Find/Next/Previous,
   context menu with Edit/Rebase/Duplicate/Delete, double-click to edit), `SignalEditorWindow`
   (custom `DbcBitGrid`: 8-byte blocks, LSB0 numbering, green hatch for the current signal, start
   bit ring, per-signal colours and names, left-click start bit, right-click switch signal; all

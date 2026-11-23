@@ -67,6 +67,10 @@ public partial class DbcEditorWindow : Window
         SearchPosText.Text = _viewModel.SearchStatus;
     }
 
+    private void OnExpandAll(object? sender, RoutedEventArgs e) => _viewModel.ExpandAll();
+
+    private void OnCollapseAll(object? sender, RoutedEventArgs e) => _viewModel.CollapseAll();
+
     private async void OnDelete(object? sender, RoutedEventArgs e)
     {
         var message = _viewModel.DescribeDeletion();

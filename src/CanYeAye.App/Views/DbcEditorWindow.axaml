@@ -55,6 +55,11 @@
               <TextBlock Classes="toolLabel" Text="Delete" />
             </StackPanel>
           </Button>
+          <Separator Width="1" Height="40" Margin="4,0" />
+          <Button Content="Expand All" Height="30" VerticalAlignment="Center" Click="OnExpandAll"
+                  ToolTip.Tip="Expand every node, message and signal" />
+          <Button Content="Collapse All" Height="30" VerticalAlignment="Center" Click="OnCollapseAll"
+                  ToolTip.Tip="Collapse every node and message" />
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" Spacing="6">

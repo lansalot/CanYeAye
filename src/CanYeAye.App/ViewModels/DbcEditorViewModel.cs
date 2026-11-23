@@ -125,17 +125,29 @@ public partial class DbcEditorViewModel : ObservableObject
     /// <summary>Rebuilds the whole tree, optionally reselecting the item that wraps <paramref name="model"/>.</summary>
     public void Rebuild(object? model = null)
     {
+        // Keep what the user had open/closed; items that did not exist yet start expanded.
+        var known = new HashSet<object>();
+        var expanded = new HashSet<object>();
+        foreach (var item in Flatten(Roots))
+        {
+            known.Add(item.Model);
+            if (item.IsExpanded)
+            {
+                expanded.Add(item.Model);
+            }
+        }
+
         Roots.Clear();
 
         foreach (var node in _file.Nodes)
         {
-            var nodeItem = new DbcTreeItem(DbcTreeItemKind.Node, DescribeNode(node), node);
+            var nodeItem = CreateItem(DbcTreeItemKind.Node, DescribeNode(node), node);
             Roots.Add(nodeItem);
 
             foreach (var message in _file.Messages.Values.Where(message =>
                          ReferenceEquals(message.Sender ?? _file.DefaultNode, node)))
             {
-                var messageItem = new DbcTreeItem(DbcTreeItemKind.Message, DescribeMessage(message), message);
+                var messageItem = CreateItem(DbcTreeItemKind.Message, DescribeMessage(message), message);
                 nodeItem.Children.Add(messageItem);
 
                 var visited = new HashSet<DbcSignal>();
@@ -157,6 +169,42 @@ public partial class DbcEditorViewModel : ObservableObject
         if (selected is not null)
         {
             ExpandAncestors(selected);
+        }
+
+        DbcTreeItem CreateItem(DbcTreeItemKind kind, string text, object itemModel) =>
+            new(kind, text, itemModel)
+            {
+                IsExpanded = !known.Contains(itemModel) || expanded.Contains(itemModel),
+            };
+
+        void AddSignal(DbcTreeItem parent, DbcSignal signal, HashSet<DbcSignal> seen)
+        {
+            if (!seen.Add(signal))
+            {
+                return;
+            }
+
+            var item = CreateItem(DbcTreeItemKind.Signal, DescribeSignal(signal), signal);
+            parent.Children.Add(item);
+            foreach (var child in signal.MultiplexedChildren)
+            {
+                AddSignal(item, child, seen);
+            }
+        }
+    }
+
+    /// <summary>Expand every node, message and signal.</summary>
+    public void ExpandAll() => SetExpanded(Roots, expanded: true);
+
+    /// <summary>Collapse every node and message, leaving only the node names visible.</summary>
+    public void CollapseAll() => SetExpanded(Roots, expanded: false);
+
+    private static void SetExpanded(IEnumerable<DbcTreeItem> items, bool expanded)
+    {
+        foreach (var item in items)
+        {
+            item.IsExpanded = expanded;
+            SetExpanded(item.Children, expanded);
         }
     }
 
@@ -396,21 +444,6 @@ public partial class DbcEditorViewModel : ObservableObject
         }
 
         return null;
-    }
-
-    private void AddSignal(DbcTreeItem parent, DbcSignal signal, HashSet<DbcSignal> visited)
-    {
-        if (!visited.Add(signal))
-        {
-            return;
-        }
-
-        var item = new DbcTreeItem(DbcTreeItemKind.Signal, DescribeSignal(signal), signal);
-        parent.Children.Add(item);
-        foreach (var child in signal.MultiplexedChildren)
-        {
-            AddSignal(item, child, visited);
-        }
     }
 
     private static IEnumerable<DbcTreeItem> Flatten(IEnumerable<DbcTreeItem> items)
