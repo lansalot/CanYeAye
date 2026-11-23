@@ -1100,6 +1100,8 @@ public partial class MainWindowViewModel : ObservableObject
             if (InterpretFrames)
             {
                 row.Interpretation = Describe(display);
+                var detail = DescribeDiagnosticsDetail(display);
+                row.InterpretationTip = detail.Length > 0 ? detail : null;
             }
         }
         else
@@ -1115,9 +1117,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     private FrameRowViewModel CreateRow(CanFrame frame)
     {
+        var detail = InterpretFrames ? DescribeDiagnosticsDetail(frame) : string.Empty;
         var row = new FrameRowViewModel(frame)
         {
             Interpretation = InterpretFrames ? Describe(frame) : string.Empty,
+            InterpretationTip = detail.Length > 0 ? detail : null,
         };
         row.AttachNodeNames(NodeNames);
         return row;
@@ -1125,10 +1129,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     private string Describe(CanFrame frame)
     {
+        var diagnostics = DescribeDiagnostics(frame);
+
         var message = Dbc.FindMessage(frame);
         if (message is null || message.Signals.Count == 0)
         {
-            return string.Empty;
+            return diagnostics;
         }
 
         var parts = new List<string> { $"<{message.Name}>" };
@@ -1141,7 +1147,45 @@ public partial class MainWindowViewModel : ObservableObject
             }
         }
 
-        return string.Join(Environment.NewLine, parts);
+        var dbcText = string.Join(Environment.NewLine, parts);
+        return diagnostics.Length == 0
+            ? dbcText
+            : diagnostics + Environment.NewLine + dbcText;
+    }
+
+    /// <summary>
+    /// DM1/DM2/DM12 summary for the interpretation cell. J1939-73 diagnostic messages are
+    /// recognised by PGN, so they decode without a DBC file.
+    /// </summary>
+    private string DescribeDiagnostics(CanFrame frame)
+    {
+        if (!J1939Diagnostics.TryDecode(frame, out var message) || message is null)
+        {
+            return string.Empty;
+        }
+
+        return J1939Diagnostics.DescribeCompact(message);
+    }
+
+    /// <summary>Full DM1/DM2/DM12 text for the row tooltip and clipboard.</summary>
+    private string DescribeDiagnosticsDetail(CanFrame frame)
+    {
+        if (!J1939Diagnostics.TryDecode(frame, out var message) || message is null)
+        {
+            return string.Empty;
+        }
+
+        return J1939Diagnostics.Describe(message, NodeNames[message.Source]);
+    }
+
+    /// <summary>
+    /// Best available description of a frame for the clipboard: the full diagnostic text when
+    /// the frame carries DTCs, otherwise the normal interpretation.
+    /// </summary>
+    public string DescribeFrameForClipboard(CanFrame frame)
+    {
+        var detail = DescribeDiagnosticsDetail(frame);
+        return detail.Length > 0 ? detail : Describe(frame);
     }
 
     private void RegisterFilterEntries(CanFrame frame)

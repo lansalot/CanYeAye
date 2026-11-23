@@ -214,7 +214,10 @@ fails the gate produces no build, package or release.
   captured traffic: nodes sized by involvement, bidirectional edges weighted by volume,
   broadcast bar, hover details and top talkers (`Name (0xNN): frames`), drag, wheel/pinch zoom,
   pan, long-press/double-click node naming. Node positions, zoom/pan and window geometry
-  persist. Design notes: `docs/research/j1939-node-analysis.md`.
+  persist. Design notes: `docs/research/j1939-node-analysis.md`. `Interpret Frames` also decodes
+  DM1/DM2/DM12 by PGN without a DBC (lamp states, SPN, FMI wording, OC, CM); the frame context menu
+  looks the SPN/FMI up in a browser or copies the full decode. Multi-DTC DM1 needs J1939 transport
+  protocol reassembly, which is not implemented yet.
 - macOS (Apple silicon) support: builds, tests and runs natively. On macOS the main window's
   XAML `Menu` is mirrored into the global menu bar by `Services/NativeMenuBridge` (clicks are
   forwarded to the original `MenuItem`, so Command/Click wiring stays in one place; Exit maps
@@ -229,6 +232,8 @@ fails the gate produces no build, package or release.
 ### Next session
 
 - DBC editor follow-up: port the signal editor undo stack (Ctrl+Z) from dbcsignaleditor.cpp.
+- J1939 diagnostics follow-up: reassemble transport-protocol DM1/DM2 (BAM and CMDT) so ECUs with
+  two or more active DTCs decode fully in live traffic and loaded logs; then add DM11/DM3 clear.
 - Verify the node graph's pinch-zoom and long-press naming on a real touchscreen (the control
   tracks touch pointers manually).
 - Optional Flow View follow-ups: hover readout on the byte graph, remembering the last selected

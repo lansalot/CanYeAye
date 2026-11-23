@@ -59,6 +59,10 @@ public partial class FrameRowViewModel : ObservableObject
 
     public bool HasInterpretation => Interpretation.Length > 0;
 
+    /// <summary>Full decoded detail (e.g. every DTC with its failure mode) shown as a tooltip.</summary>
+    [ObservableProperty]
+    private string? _interpretationTip;
+
     public string Ascii => ToAscii(Frame.Payload);
 
     public string Time => TimeFormat.LocalTime(Frame.Timestamp);

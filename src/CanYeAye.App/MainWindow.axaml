@@ -114,6 +114,9 @@
                 CanUserSortColumns="False">
         <DataGrid.ContextMenu>
           <ContextMenu>
+            <MenuItem x:Name="LookupDtcMenuItem" Header="Look up SPN/FMI…" Click="OnLookupDtcClick" IsEnabled="False" />
+            <MenuItem x:Name="CopyDtcMenuItem" Header="Copy DTC" Click="OnCopyDtcClick" IsEnabled="False" />
+            <Separator />
             <MenuItem Header="Show Time column" ToggleType="CheckBox" IsChecked="True" Tag="Time" Click="OnToggleColumnClick" />
             <MenuItem Header="Show Bus column" ToggleType="CheckBox" IsChecked="True" Tag="Bus" Click="OnToggleColumnClick" />
             <MenuItem Header="Show Type column" ToggleType="CheckBox" IsChecked="True" Tag="Type" Click="OnToggleColumnClick" />
@@ -146,7 +149,9 @@
           <DataGridTemplateColumn Header="Data" Width="*">
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
-                <StackPanel VerticalAlignment="Center">
+                <StackPanel VerticalAlignment="Center" ClipToBounds="True"
+                            ToolTip.Tip="{Binding InterpretationTip}"
+                            ToolTip.ShowOnDisabled="True">
                   <TextBlock Text="{Binding Data}" FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" />
                   <TextBlock Text="{Binding Interpretation}" IsVisible="{Binding HasInterpretation}"
                              TextWrapping="Wrap" FontFamily="Consolas,Menlo,DejaVu Sans Mono,Courier New,monospace" Opacity="0.9" />

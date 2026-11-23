@@ -2,11 +2,13 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using CanYeAye.App.Services;
 using CanYeAye.App.ViewModels;
 using CanYeAye.Core.FileFormats;
+using CanYeAye.Core.Protocols;
 using CanYeAye.Core.Settings;
 
 namespace CanYeAye.App;
@@ -140,6 +142,7 @@ public partial class MainWindow : Window
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.ScrollToEndRequested += OnScrollToEndRequested;
         _viewModel.RowExpansionChanged += OnRowExpansionChanged;
+        UpdateDtcMenu();
 
         _viewModel.AutoScrollWindow = _settings.AutoScrollWindow;
         _viewModel.OverwriteMode = _settings.OverwriteMode;
@@ -744,6 +747,71 @@ public partial class MainWindow : Window
         SyncColumnMenu();
     }
 
+    /// <summary>Enables the DTC lookup items only when the selected frame carries a DM1/DM2/DM12.</summary>
+    private void UpdateDtcMenu()
+    {
+        var enabled = _viewModel.SelectedFrame is { } row &&
+                      J1939Diagnostics.TryDecode(row.Frame, out _);
+        LookupDtcMenuItem.IsEnabled = enabled;
+        CopyDtcMenuItem.IsEnabled = enabled;
+    }
+
+    private J1939DiagnosticMessage? SelectedDiagnosticMessage()
+    {
+        if (_viewModel.SelectedFrame is not { } row ||
+            !J1939Diagnostics.TryDecode(row.Frame, out var message))
+        {
+            return null;
+        }
+
+        return message;
+    }
+
+    private async void OnLookupDtcClick(object? sender, RoutedEventArgs e)
+    {
+        var message = SelectedDiagnosticMessage();
+        if (message is null || message.Dtcs.Count == 0)
+        {
+            _viewModel.StatusText = "The selected frame does not contain a diagnostic trouble code";
+            return;
+        }
+
+        var dtc = message.Dtcs[0];
+        var uri = new Uri("https://www.google.com/search?q=" + Uri.EscapeDataString(dtc.LookupQuery));
+        try
+        {
+            if (TopLevel.GetTopLevel(this)?.Launcher is { } launcher)
+            {
+                await launcher.LaunchUriAsync(uri);
+                _viewModel.StatusText = $"Looking up {dtc.LookupQuery}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _viewModel.StatusText = "Could not open the browser: " + ex.Message;
+        }
+    }
+
+    private async void OnCopyDtcClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedFrame is not { } row)
+        {
+            return;
+        }
+
+        var text = _viewModel.DescribeFrameForClipboard(row.Frame);
+        if (text.Length == 0)
+        {
+            return;
+        }
+
+        if (TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard)
+        {
+            await clipboard.SetTextAsync(text);
+            _viewModel.StatusText = "Copied DTC details";
+        }
+    }
+
     private void OnScrollToEndRequested(object? sender, EventArgs e)
     {
         if (_viewModel.Frames.Count == 0)
@@ -769,6 +837,9 @@ public partial class MainWindow : Window
                 break;
             case nameof(MainWindowViewModel.IsLoading):
                 ApplyProgressVisibility();
+                break;
+            case nameof(MainWindowViewModel.SelectedFrame):
+                UpdateDtcMenu();
                 break;
         }
     }

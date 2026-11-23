@@ -92,3 +92,39 @@ Shows J1939 **sources as nodes** and **conversations as edges**.
   hover readout, and a legend for the node size scale.
 - Node positions are saved by address in world coordinates, so a node that disappears/returns
   keeps its spot; `Reset view` clears them.
+
+## DM1/DM2/DM12 decoding in the frame grid (2026-11-23)
+
+`Interpret Frames` also decodes the J1939-73 diagnostic messages that carry trouble codes, with
+no DBC loaded. DM1 (`PGN 65226`), DM2 (`65227`) and DM12 (`65236`) are fixed broadcast PGNs, so
+they are recognised from the 29-bit identifier alone.
+
+What is decoded from the SAE-defined layout:
+
+- The two lamp header bytes: MIL, red stop, amber warning and protect, each 2 bits
+  (`00` off, `01` on, `10` reserved, `11` not available) plus the matching flash bits
+  (`00` slow 1 Hz, `01` fast 2 Hz, `10`/`11` reserved).
+- Four-byte DTC records: SPN 19 bits, FMI 5 bits, CM 1 bit (`CM 1` = pre-1996 SPN encoding),
+  OC 7 bits (126 max, 127 = not available).
+- SPN 516096-524287 is flagged as manufacturer-defined.
+- FMI 0-31 is translated to the J1939-73 wording (full text in the tooltip/clipboard, a short
+  form in the one-line grid summary).
+
+The SPN *name* (e.g. "Engine Oil Pressure") is not decoded: that list is only available in the
+paid SAE J1939 Digital Annex / J1939-71. Instead the grid shows the exact SPN and FMI so the code
+can be looked up, and the frame context menu offers **Look up SPN/FMI...** (opens a web search)
+and **Copy DTC** (full multi-line decode to the clipboard).
+
+Limits:
+
+- The decoder handles a **single frame**. Two or more DTCs make DM1 longer than 8 bytes, which
+  J1939-73 transmits with the transport protocol (BAM or CMDT, `PGN 60416`/`60160`). CanYeAye does
+  not reassemble J1939 TP yet, so multi-DTC messages show only their raw TP frames.
+- DM2 is request-only, so it appears in a capture only when something requested it. Decoding it
+  when present is still useful for historic faults.
+- Lamp encodings differ between ECUs for the "off" case (0 vs 3 seen in the same vehicle); the
+  decoder reports what the bits say rather than guessing.
+
+Core: `src/CanYeAye.Core/Protocols/J1939Diagnostics.cs` (`TryDecode`, `DecodeDtcs`,
+`DescribeFmi`, `DescribeCompact`, `Describe`). Tests:
+`tests/CanYeAye.Tests/Protocols/J1939DiagnosticsTests.cs`.
