@@ -282,6 +282,7 @@ public partial class MainWindow : Window
     {
         NativeMenuBridge.SetShortcut(OpenLogMenuItem, Key.O);
         NativeMenuBridge.SetShortcut(SaveLogMenuItem, Key.S);
+        NativeMenuBridge.SetShortcut(SaveFilteredLogMenuItem, Key.S, KeyModifiers.Shift);
         NativeMenuBridge.SetShortcut(ConnectionSettingsMenuItem, Key.K);
         NativeMenuBridge.SetShortcut(ZoomInMenuItem, Key.OemPlus);
         NativeMenuBridge.SetShortcut(ZoomOutMenuItem, Key.OemMinus);

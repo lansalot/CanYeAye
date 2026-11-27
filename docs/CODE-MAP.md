@@ -33,6 +33,7 @@ fails instead of the doc lying. Deep-dive design notes live in `docs/research/`.
 | Parse user-entered IDs (`0x1F3`, `1893`, binary) | `src/CanYeAye.Core/Frames/CanIdParser.cs` (`Parse`, `ParseId`, `FormatId`). **Single IDs only** — no comma-separated list parser exists anywhere in the repo; a multi-ID field needs one built on top. |
 | Add or fix a log format | `src/CanYeAye.Core/FileFormats/` (one class per format implementing `src/CanYeAye.Core/FileFormats/ILogFormat.cs`) + register in `src/CanYeAye.Core/FileFormats/LogFormatRegistry.cs`; fixtures and expectations in `tests/CanYeAye.Tests/FileFormats/` |
 | Change log loading in the app | `MainWindowViewModel.LoadLogFileAsync` / `PopulateLoadedAsync` |
+| Save only the frames passing the filters | `MainWindowViewModel.SaveFilteredLogAsync` / `FilteredFrameSnapshot`; predicate in `src/CanYeAye.Core/Frames/FrameVisibility.cs` (shared with the grid's `PassesFilters`) |
 | DBC parsing or saving | `src/CanYeAye.Core/Dbc/DbcFileReader.cs`, `DbcFileWriter.cs`, model in `DbcModel.cs`, bit maths in `SignalCodec.cs` |
 | DBC mutation operations | `src/CanYeAye.Core/Dbc/DbcEditor.cs` (used by both the editors and tests) |
 | DBC editor UI | `src/CanYeAye.App/Views/DbcEditorWindow.axaml`, `SignalEditorWindow.axaml`, `MessageEditorWindow.axaml`, `NodeEditorWindow.axaml` + `src/CanYeAye.App/Controls/DbcBitGrid.cs` |
