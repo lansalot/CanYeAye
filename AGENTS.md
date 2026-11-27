@@ -184,6 +184,12 @@ fails the gate produces no build, package or release.
   (position, columns, toggles, scale, loaded DBCs) persists across restarts. `dotnet run --
   <log> [dbc...]` opens files at startup. Verified with screen captures, including a 324k-frame
   load.
+- Large logs: the grid shows only the newest 50,000 frames by default. Loading a file with more
+  frames prompts once ("Large log file", *Show last 50,000* / *Show all frames*) warning that the
+  view may be slower; accepting keeps every frame visible, including live traffic afterwards.
+  View → *Show All Frames (ignore the 50,000 cap)* toggles the same limit later and re-populates
+  the grid in place. Verified on a 155,688-frame capture with UI automation (both prompt answers
+  and both menu states).
 - Frame-ID row highlighting (filter pane): each ID row has a second checkbox with a colour
   swatch; ticking it tints the matching grid rows. Colours are stable per ID (no re-shuffle
   between runs) and use separate hand-tuned dark/light palettes so the grid text stays readable;
@@ -241,6 +247,10 @@ fails the gate produces no build, package or release.
   reachable from macOS's application menu and from Tools → About CanYeAye… on every platform.
 - Fixtures copied from SavvyCAN's `examples` live in `tests/CanYeAye.Tests/Fixtures`; deviations from
   the reference are listed in `docs/research/log-formats.md`.
+- File → Save Filtered Log… writes only the frames passing the current ID/bus filters and filter
+  search, in the format chosen under Save Format (suggested name `<log>-filtered.<ext>`). It
+  shares the grid's predicate (`Core.Frames.FrameVisibility`) but is not truncated by the
+  50,000-row display cap, and reports when no frames match. Ctrl+Shift+S.
 
 ### Next session
 

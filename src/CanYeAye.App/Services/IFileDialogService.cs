@@ -26,4 +26,7 @@ public interface IFileDialogService
     Task ShowMessageAsync(string title, string message);
 
     Task<bool> ConfirmAsync(string title, string message);
+
+    /// <summary>Confirmation with custom button labels; true when the accept button is pressed.</summary>
+    Task<bool> ConfirmAsync(string title, string message, string acceptText, string declineText);
 }

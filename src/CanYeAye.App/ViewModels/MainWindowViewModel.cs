@@ -23,7 +23,14 @@ namespace CanYeAye.App.ViewModels;
 /// </summary>
 public partial class MainWindowViewModel : ObservableObject
 {
-    private const int MaxDisplayedFrames = 50_000;
+    /// <summary>
+    /// Frames kept in the grid by default. Larger logs only show their newest frames unless the
+    /// user opts into <see cref="ShowAllFrames"/> (the grid is a virtualised collection but
+    /// hundreds of thousands of rows still cost time to build, filter and scroll).
+    /// </summary>
+    public const int DefaultDisplayLimit = 50_000;
+
+    private int _displayFrameLimit = DefaultDisplayLimit;
 
     private readonly FrameStore _store = new();
     private readonly ConcurrentQueue<CanFrame> _pending = new();
@@ -36,6 +43,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly List<FrameFilterItem> _allFrameFilters = [];
     private readonly List<BusFilterItem> _allBusFilters = [];
     private readonly Dictionary<(byte Bus, uint Id), FrameRowViewModel> _overwriteRows = [];
+    private readonly Func<CanFrame, string> _frameLabel;
     private ICanConnection? _connection;
     private string? _selectedLogPath;
     private long _framesThisSecond;
@@ -43,6 +51,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel()
     {
+        _frameLabel = frame => BuildFilterLabel(frame.FrameId, frame.IsExtended);
+
         ConnectionManager.FrameReceived += (_, frame) =>
         {
             if (CaptureSuspended)
@@ -112,6 +122,14 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Snapshot of the capture (loaded log or live frames) for analysis windows.</summary>
     public IReadOnlyList<CanFrame> FrameSnapshot() => _store.Snapshot();
+
+    /// <summary>
+    /// Snapshot of the frames that pass the current ID/bus filters and filter search - the same
+    /// set the grid displays, used by "Save Filtered Log". Unlike the grid this is not truncated
+    /// to <see cref="DefaultDisplayLimit"/> when <see cref="ShowAllFrames"/> is off.
+    /// </summary>
+    public List<CanFrame> FilteredFrameSnapshot() =>
+        FrameVisibility.SelectVisible(_store.Snapshot(), _idFilters, _busFilters, FilterSearch, _frameLabel);
 
     /// <summary>
     /// Human-readable label for a frame's ID (hex ID, J1939 node name when known and the DBC
@@ -224,6 +242,13 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _interpretFrames;
+
+    /// <summary>
+    /// Shows every captured frame instead of only the newest <see cref="DefaultDisplayLimit"/>.
+    /// Turned on when the user accepts the "large file" prompt, or from View → Show All Frames.
+    /// </summary>
+    [ObservableProperty]
+    private bool _showAllFrames;
 
     [ObservableProperty]
     private string _filterSearch = string.Empty;
@@ -458,6 +483,21 @@ public partial class MainWindowViewModel : ObservableObject
         RebuildDisplay();
     }
 
+    partial void OnShowAllFramesChanged(bool value)
+    {
+        _displayFrameLimit = value ? int.MaxValue : DefaultDisplayLimit;
+        if (IsLoading || _store.Count == 0)
+        {
+            // A load in progress populates the grid itself; a clear leaves nothing to rebuild.
+            return;
+        }
+        RebuildDisplay();
+        StatusText = value
+            ? $"Showing all {_store.Count:N0} frames"
+            : $"Showing the last {Math.Min(_store.Count, DefaultDisplayLimit):N0} of {_store.Count:N0} frames";
+        LogBus.Info(StatusText);
+    }
+
     partial void OnFilterSearchChanged(string value)
     {
         ApplySearchToFilterList();
@@ -555,12 +595,18 @@ public partial class MainWindowViewModel : ObservableObject
 
             _store.AddRange(loaded.frames);
 
+            if (!ShowAllFrames && loaded.frames.Count > DefaultDisplayLimit)
+            {
+                await AskAboutLargeLoadAsync(path, loaded.frames.Count);
+            }
+
             await PopulateLoadedAsync(loaded.frames);
 
             _selectedLogPath = path;
             TotalFramesCaptured = _store.Count;
-            StatusText = loaded.frames.Count > MaxDisplayedFrames
-                ? $"Loaded {loaded.frames.Count:N0} frames from {Path.GetFileName(path)} (showing the last {MaxDisplayedFrames:N0})"
+            var shown = Frames.Count;
+            StatusText = shown < loaded.frames.Count
+                ? $"Loaded {loaded.frames.Count:N0} frames from {Path.GetFileName(path)} (showing the last {shown:N0})"
                 : $"Loaded {loaded.frames.Count:N0} frames from {Path.GetFileName(path)}";
             LogBus.Info(StatusText);
             CaptureReplaced?.Invoke(this, EventArgs.Empty);
@@ -575,6 +621,34 @@ public partial class MainWindowViewModel : ObservableObject
         {
             IsLoading = false;
             IsLoadIndeterminate = false;
+        }
+    }
+
+    /// <summary>
+    /// Warns that a huge log can make the grid slow and lets the user show every frame instead of
+    /// only the newest <see cref="DefaultDisplayLimit"/>. The choice lasts for the session (View →
+    /// Show All Frames toggles it afterwards).
+    /// </summary>
+    private async Task AskAboutLargeLoadAsync(string path, int frameCount)
+    {
+        if (FileDialogs is null)
+        {
+            // Headless (tests) or still starting up: keep the default cap, the user can opt in
+            // from the View menu afterwards.
+            return;
+        }
+
+        var showAll = await FileDialogs.ConfirmAsync(
+            "Large log file",
+            $"{Path.GetFileName(path)} contains {frameCount:N0} frames.\n\n"
+            + $"Loading all of them can make the frame view slow to scroll, filter and interpret.\n\n"
+            + $"Show every frame, or only the most recent {DefaultDisplayLimit:N0}?",
+            "Show all frames",
+            $"Show last {DefaultDisplayLimit:N0}");
+
+        if (showAll)
+        {
+            ShowAllFrames = true;
         }
     }
 
@@ -638,15 +712,51 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task SaveLogAsync()    {
+    private async Task SaveLogAsync()
+    {
         if (FileDialogs is null || Frames.Count == 0)
+        {
+            return;
+        }
+
+        await SaveFramesAsync(_store.Snapshot(), filtered: false);
+    }
+
+    /// <summary>
+    /// Writes only the frames that pass the current ID/bus filters (and filter search) to the
+    /// selected save format, so a filtered capture can be reopened without the hidden traffic.
+    /// </summary>
+    [RelayCommand]
+    private async Task SaveFilteredLogAsync()
+    {
+        if (FileDialogs is null || _store.Count == 0)
+        {
+            return;
+        }
+
+        var frames = FilteredFrameSnapshot();
+        if (frames.Count == 0)
+        {
+            await ShowMessageAsync(
+                "Save filtered log",
+                "No frames match the current ID and bus filters.");
+            return;
+        }
+
+        await SaveFramesAsync(frames, filtered: true);
+    }
+
+    private async Task SaveFramesAsync(IReadOnlyList<CanFrame> frames, bool filtered)
+    {
+        if (FileDialogs is null || frames.Count == 0)
         {
             return;
         }
 
         var formatIndex = Math.Max(0, SaveFormatNames.ToList().IndexOf(SelectedSaveFormat));
         var extension = LogFormatRegistry.SaveFilters[formatIndex].Format?.DefaultExtension ?? ".csv";
-        var suggested = Path.GetFileNameWithoutExtension(_selectedLogPath ?? "capture") + extension;
+        var baseName = Path.GetFileNameWithoutExtension(_selectedLogPath ?? "capture");
+        var suggested = (filtered ? baseName + "-filtered" : baseName) + extension;
         var path = await FileDialogs.PickSaveLogAsync(suggested);
         if (string.IsNullOrEmpty(path))
         {
@@ -655,9 +765,10 @@ public partial class MainWindowViewModel : ObservableObject
 
         try
         {
-            var frames = _store.Snapshot();
             var ok = await Task.Run(() => LogFormatRegistry.Save(path, formatIndex, frames));
-            StatusText = ok ? $"Saved {frames.Count} frames to {Path.GetFileName(path)}" : "Save failed";
+            StatusText = ok
+                ? $"Saved {frames.Count:N0} {(filtered ? "filtered " : string.Empty)}frames to {Path.GetFileName(path)}"
+                : "Save failed";
             if (ok)
             {
                 LogBus.Info(StatusText);
@@ -896,11 +1007,11 @@ public partial class MainWindowViewModel : ObservableObject
         {
             BuildOverwriteRows(frames);
             LoadProgress = 100;
-            await Task.Yield();
+            await LetUiRenderAsync();
             return;
         }
 
-        var matching = new List<CanFrame>(Math.Min(frames.Count, MaxDisplayedFrames));
+        var matching = new List<CanFrame>(Math.Min(frames.Count, DefaultDisplayLimit));
         var lastReport = 0;
         for (var i = 0; i < frames.Count; i++)
         {
@@ -917,25 +1028,35 @@ public partial class MainWindowViewModel : ObservableObject
                 var fraction = frames.Count == 0 ? 1.0 : (i + 1) / (double)frames.Count;
                 LoadProgress = fraction * 50.0;
                 LoadStatus = $"Scanning frames {i + 1:N0} / {frames.Count:N0}";
-                await Task.Yield();
+                await LetUiRenderAsync();
             }
         }
 
-        var start = Math.Max(0, matching.Count - MaxDisplayedFrames);
+        var start = Math.Max(0, matching.Count - _displayFrameLimit);
         var toAdd = matching.Count - start;
         for (var i = start; i < matching.Count; i++)
         {
             Frames.Add(CreateRow(matching[i]));
-            if ((i - start) % 5000 == 0 || i == matching.Count - 1)
+            if ((i - start) % 1000 == 0 || i == matching.Count - 1)
             {
                 LoadProgress = 50.0 + (toAdd == 0 ? 50.0 : (i - start + 1) * 50.0 / toAdd);
                 LoadStatus = $"Adding frames {i - start + 1:N0} / {toAdd:N0}";
-                await Task.Yield();
+                await LetUiRenderAsync();
             }
         }
 
         LoadProgress = 100;
     }
+
+    /// <summary>
+    /// Lets the UI thread paint (progress window, grid) before continuing a long loop.
+    /// <see cref="Task.Yield"/> is not enough: its continuation is posted at
+    /// <see cref="DispatcherPriority.Normal"/>, which outranks Render, so the next chunk of work
+    /// runs before the dialog is drawn and the progress bar looks frozen until the load ends.
+    /// Posting at Background lets input and rendering run first.
+    /// </summary>
+    private static Task LetUiRenderAsync() =>
+        Dispatcher.UIThread.InvokeAsync(static () => { }, DispatcherPriority.Background).GetTask();
 
     private ICanConnection CreateConnection()
     {
@@ -1034,7 +1155,7 @@ public partial class MainWindowViewModel : ObservableObject
             else
             {
                 Frames.Add(CreateRow(frame));
-                if (Frames.Count > MaxDisplayedFrames)
+                if (Frames.Count > _displayFrameLimit)
                 {
                     Frames.RemoveAt(0);
                 }
@@ -1075,7 +1196,7 @@ public partial class MainWindowViewModel : ObservableObject
                 }
             }
 
-            var start = Math.Max(0, matching.Count - MaxDisplayedFrames);
+            var start = Math.Max(0, matching.Count - _displayFrameLimit);
             for (var i = start; i < matching.Count; i++)
             {
                 Frames.Add(CreateRow(matching[i]));
@@ -1280,27 +1401,8 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private bool PassesFilters(CanFrame frame)
-    {
-        if (!_idFilters.TryGetValue(frame.FrameId, out var idVisible) || !idVisible)
-        {
-            return false;
-        }
-
-        if (!_busFilters.TryGetValue(frame.Bus, out var busVisible) || !busVisible)
-        {
-            return false;
-        }
-
-        if (!string.IsNullOrEmpty(FilterSearch) &&
-            (!_frameFilterItems.TryGetValue(frame.FrameId, out var item) ||
-             !item.Label.Contains(FilterSearch, StringComparison.OrdinalIgnoreCase)))
-        {
-            return false;
-        }
-
-        return true;
-    }
+    private bool PassesFilters(CanFrame frame) =>
+        FrameVisibility.IsVisible(frame, _idFilters, _busFilters, FilterSearch, _frameLabel);
 
     private void OnIdFilterChanged(FrameFilterItem item)
     {

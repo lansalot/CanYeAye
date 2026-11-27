@@ -223,14 +223,18 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
         return file?.TryGetLocalPath();
     }
 
-    public async Task<bool> ConfirmAsync(string title, string message)
+    public Task<bool> ConfirmAsync(string title, string message) =>
+        ConfirmAsync(title, message, "OK", "Cancel");
+
+    public async Task<bool> ConfirmAsync(string title, string message, string acceptText, string declineText)
     {
         var accepted = false;
         var window = new Window
         {
             Title = title,
-            Width = 460,
-            Height = 200,
+            Width = 560,
+            MinHeight = 220,
+            SizeToContent = SizeToContent.Height,
             CanResize = false,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Content = new StackPanel
@@ -247,8 +251,18 @@ public sealed class FileDialogService(Func<TopLevel?> topLevel) : IFileDialogSer
                         HorizontalAlignment = HorizontalAlignment.Right,
                         Children =
                         {
-                            new Button { Content = "Cancel", Width = 90 },
-                            new Button { Content = "OK", Width = 90 },
+                            new Button
+                            {
+                                Content = declineText,
+                                MinWidth = 140,
+                                Padding = new Avalonia.Thickness(16, 8),
+                            },
+                            new Button
+                            {
+                                Content = acceptText,
+                                MinWidth = 140,
+                                Padding = new Avalonia.Thickness(16, 8),
+                            },
                         },
                     },
                 },
