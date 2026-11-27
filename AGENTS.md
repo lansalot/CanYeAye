@@ -9,6 +9,9 @@ Reference implementation lives at `C:\Github\SavvyCAN`.
 **Hard rule: never modify `C:\Github\SavvyCAN` or anything outside `C:\Github\CanYeAye` without
 explicit permission.** The reference repo is read-only; read it freely.
 
+**Navigation: `docs/CODE-MAP.md`** — task → file routing table, data flows, layer rules and
+landmines. Read it before exploring; it exists so you don't grep the repo cold.
+
 ## Locked decisions
 
 | Area | Decision |
@@ -181,6 +184,12 @@ fails the gate produces no build, package or release.
   (position, columns, toggles, scale, loaded DBCs) persists across restarts. `dotnet run --
   <log> [dbc...]` opens files at startup. Verified with screen captures, including a 324k-frame
   load.
+- Frame-ID row highlighting (filter pane): each ID row has a second checkbox with a colour
+  swatch; ticking it tints the matching grid rows. Colours are stable per ID (no re-shuffle
+  between runs) and use separate hand-tuned dark/light palettes so the grid text stays readable;
+  they are re-applied when the theme variant changes. Zebra stripes are suppressed on tinted
+  rows and selection/hover still win. Toggling re-tints rows in place instead of rebuilding the
+  display. Verified in dark and light themes with screen captures.
 - Sniffer (parity with `re/sniffer`): custom-drawn grid with Delta / Frequency / ID / byte
   columns, changed-byte green/red colouring, notching (per notch interval), mute notched bits,
   byte fading, bit view (each bit is a larger green=1 / red=0 cell with a white outline),

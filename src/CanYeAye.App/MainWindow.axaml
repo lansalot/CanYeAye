@@ -136,6 +136,13 @@
           <Style Selector="DataGridRow:nth-child(even):not(:selected):not(:pointerover)">
             <Setter Property="Background" Value="{DynamicResource FrameRowAlternateBrush}" />
           </Style>
+          <!-- Tinted IDs beat the zebra stripes; selection and hover still win over both. -->
+          <Style Selector="DataGridRow.highlight:not(:selected):not(:pointerover)">
+            <Setter Property="Background" Value="{Binding HighlightBrush}" />
+          </Style>
+          <Style Selector="DataGridRow.highlight:nth-child(even):not(:selected):not(:pointerover)">
+            <Setter Property="Background" Value="{Binding HighlightBrush}" />
+          </Style>
         </DataGrid.Styles>
         <DataGrid.Columns>
           <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="130" />

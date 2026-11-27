@@ -162,6 +162,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     public int FrameInfoWindowY { get; set; } = int.MinValue;
 
+    /// <summary>
+    /// Raised after the set of highlighted rows changed (tick toggled or theme variant changed)
+    /// so the grid can refresh the style class on its realised rows.
+    /// </summary>
+    public event EventHandler? RowHighlightingChanged;
+
     /// <summary>Raised when the view should scroll to the newest frame (auto-scroll).</summary>
     public event EventHandler? ScrollToEndRequested;
 
@@ -1158,6 +1164,7 @@ public partial class MainWindowViewModel : ObservableObject
             InterpretationTip = detail.Length > 0 ? detail : null,
         };
         row.AttachNodeNames(NodeNames);
+        ApplyHighlight(row);
         return row;
     }
 
@@ -1250,7 +1257,9 @@ public partial class MainWindowViewModel : ObservableObject
                 frame.IsExtended,
                 BuildFilterLabel(frame.FrameId, frame.IsExtended),
                 OnIdFilterChanged,
-                visible);
+                OnIdHighlightChanged,
+                visible,
+                FrameHighlightPalette.BrushFor(frame.FrameId, frame.IsExtended));
             _frameFilterItems[frame.FrameId] = item;
             _allFrameFilters.Add(item);
             if (MatchesSearch(item.Label))
@@ -1302,6 +1311,45 @@ public partial class MainWindowViewModel : ObservableObject
         {
             RebuildDisplay();
         }
+    }
+
+    /// <summary>
+    /// Highlighting is visual-only, so the existing rows are re-tinted in place instead of
+    /// rebuilding up to 50k row view models.
+    /// </summary>
+    private void OnIdHighlightChanged(FrameFilterItem item)
+    {
+        UpdateFilterSummary();
+        RefreshRowHighlights();
+    }
+
+    /// <summary>Re-applies the tint after the theme variant changed (palettes are per theme).</summary>
+    public void RefreshHighlightBrushes()
+    {
+        foreach (var item in _allFrameFilters)
+        {
+            item.HighlightBrush = FrameHighlightPalette.BrushFor(item.Id, item.Extended);
+        }
+
+        RefreshRowHighlights();
+    }
+
+    private void RefreshRowHighlights()
+    {
+        foreach (var row in Frames)
+        {
+            ApplyHighlight(row);
+        }
+
+        RowHighlightingChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ApplyHighlight(FrameRowViewModel row)
+    {
+        row.SetHighlight(
+            _frameFilterItems.TryGetValue(row.Frame.FrameId, out var item) && item.IsHighlighted
+                ? item.HighlightBrush
+                : null);
     }
 
     private void OnBusFilterChanged(BusFilterItem item)
@@ -1625,7 +1673,10 @@ public partial class MainWindowViewModel : ObservableObject
     {
         var total = _idFilters.Count;
         var enabled = _idFilters.Values.Count(value => value);
-        FilterSummary = $"{enabled} / {total} IDs shown";
+        var highlighted = _allFrameFilters.Count(item => item.IsHighlighted);
+        FilterSummary = highlighted == 0
+            ? $"{enabled} / {total} IDs shown"
+            : $"{enabled} / {total} IDs shown · {highlighted} highlighted";
     }
 
     private void ApplySearchToFilterList()

@@ -1,3 +1,4 @@
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CanYeAye.App.Formatting;
 using CanYeAye.Core;
@@ -15,6 +16,7 @@ public partial class FrameRowViewModel : ObservableObject
 {
     private CanFrame _frame;
     private J1939NodeNames? _nodeNames;
+    private IBrush? _highlightBrush;
 
     public FrameRowViewModel(CanFrame frame)
     {
@@ -22,6 +24,27 @@ public partial class FrameRowViewModel : ObservableObject
     }
 
     public CanFrame Frame => _frame;
+
+    /// <summary>Row tint when the ID is ticked for highlighting, otherwise null.</summary>
+    public IBrush? HighlightBrush => _highlightBrush;
+
+    public bool IsHighlighted => _highlightBrush is not null;
+
+    /// <summary>
+    /// Sets (or clears) the row tint. Kept off <see cref="SetFrame"/> so overwrite updates do not
+    /// disturb it; the view listens for property changes to update the row's style class.
+    /// </summary>
+    public void SetHighlight(IBrush? brush)
+    {
+        if (ReferenceEquals(_highlightBrush, brush))
+        {
+            return;
+        }
+
+        _highlightBrush = brush;
+        OnPropertyChanged(nameof(HighlightBrush));
+        OnPropertyChanged(nameof(IsHighlighted));
+    }
 
     public void AttachNodeNames(J1939NodeNames names) => _nodeNames = names;
 

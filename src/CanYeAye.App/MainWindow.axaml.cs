@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using CanYeAye.App.Services;
 using CanYeAye.App.ViewModels;
 using CanYeAye.Core.FileFormats;
@@ -143,6 +144,13 @@ public partial class MainWindow : Window
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.ScrollToEndRequested += OnScrollToEndRequested;
         _viewModel.RowExpansionChanged += OnRowExpansionChanged;
+        _viewModel.RowHighlightingChanged += (_, _) => RefreshRowHighlightClasses();
+        FrameGrid.LoadingRow += OnFrameGridLoadingRow;
+        if (Application.Current is { } app)
+        {
+            app.ActualThemeVariantChanged += OnAppThemeVariantChanged;
+        }
+
         UpdateDtcMenu();
 
         _viewModel.AutoScrollWindow = _settings.AutoScrollWindow;
@@ -161,6 +169,11 @@ public partial class MainWindow : Window
 
         Closed += async (_, _) =>
         {
+            if (Application.Current is { } app)
+            {
+                app.ActualThemeVariantChanged -= OnAppThemeVariantChanged;
+            }
+
             try
             {
                 await _viewModel.ConnectionManager.DisconnectAllAsync();
@@ -828,6 +841,50 @@ public partial class MainWindow : Window
     private void OnRowExpansionChanged(object? sender, bool expanded)
     {
         FrameGrid.RowHeight = expanded ? double.NaN : 24;
+    }
+
+    private void OnFrameGridLoadingRow(object? sender, DataGridRowEventArgs e)
+    {
+        ApplyRowHighlightClass(e.Row);
+        // Virtualised rows are recycled; re-apply when a row is handed a different frame.
+        e.Row.DataContextChanged -= OnRowDataContextChanged;
+        e.Row.DataContextChanged += OnRowDataContextChanged;
+    }
+
+    private void OnRowDataContextChanged(object? sender, EventArgs e)
+    {
+        if (sender is DataGridRow row)
+        {
+            ApplyRowHighlightClass(row);
+        }
+    }
+
+    private void OnAppThemeVariantChanged(object? sender, EventArgs e) => _viewModel.RefreshHighlightBrushes();
+
+    /// <summary>
+    /// Only realised rows carry the highlight class (the grid is virtualised); toggling a
+    /// filter updates those rows without rebuilding the display.
+    /// </summary>
+    private void RefreshRowHighlightClasses()
+    {
+        foreach (var row in FrameGrid.GetVisualDescendants().OfType<DataGridRow>())
+        {
+            ApplyRowHighlightClass(row);
+        }
+    }
+
+    private static void ApplyRowHighlightClass(DataGridRow row)
+    {
+        if (row.DataContext is not FrameRowViewModel { IsHighlighted: true })
+        {
+            row.Classes.Remove("highlight");
+            return;
+        }
+
+        // Re-add rather than Set: a recycled row can be given the class before its new
+        // DataContext arrives, and only a fresh style application re-evaluates the bound brush.
+        row.Classes.Remove("highlight");
+        row.Classes.Add("highlight");
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

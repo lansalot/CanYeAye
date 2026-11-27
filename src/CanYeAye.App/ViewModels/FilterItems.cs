@@ -1,25 +1,34 @@
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CanYeAye.Core;
 
 namespace CanYeAye.App.ViewModels;
 
-/// <summary>One entry in the frame-ID filter list (checked = show that ID).</summary>
+/// <summary>
+/// One entry in the frame-ID filter list. The first checkbox shows/hides the ID's rows, the
+/// second (with the colour swatch) tints them.
+/// </summary>
 public partial class FrameFilterItem : ObservableObject
 {
     private readonly Action<FrameFilterItem> _changed;
+    private readonly Action<FrameFilterItem> _highlightChanged;
 
     public FrameFilterItem(
         uint id,
         bool extended,
         string label,
         Action<FrameFilterItem> changed,
-        bool isChecked = true)
+        Action<FrameFilterItem> highlightChanged,
+        bool isChecked = true,
+        IBrush? highlightBrush = null)
     {
         Id = id;
         Extended = extended;
         Label = label;
         _changed = changed;
+        _highlightChanged = highlightChanged;
         _isChecked = isChecked;
+        _highlightBrush = highlightBrush;
     }
 
     public uint Id { get; }
@@ -32,7 +41,17 @@ public partial class FrameFilterItem : ObservableObject
     [ObservableProperty]
     private bool _isChecked = true;
 
+    /// <summary>Shown as the swatch next to the highlight checkbox and as the row tint.</summary>
+    [ObservableProperty]
+    private IBrush? _highlightBrush;
+
+    /// <summary>True when rows with this ID are tinted in the frame grid.</summary>
+    [ObservableProperty]
+    private bool _isHighlighted;
+
     partial void OnIsCheckedChanged(bool value) => _changed(this);
+
+    partial void OnIsHighlightedChanged(bool value) => _highlightChanged(this);
 }
 
 /// <summary>One entry in the bus filter list (checked = show that bus).</summary>

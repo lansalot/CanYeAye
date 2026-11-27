@@ -50,10 +50,24 @@
         <DockPanel>
           <TextBox DockPanel.Dock="Top" PlaceholderText="Filter IDs." Text="{Binding FilterSearch, Mode=TwoWay}"
                    Margin="0,0,0,6" />
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,52" Margin="2,0,6,3">
+            <TextBlock Grid.Column="0" Text="Show" FontSize="10" Opacity="0.7" />
+            <TextBlock Grid.Column="1" Text="Highlight" FontSize="10" Opacity="0.7" HorizontalAlignment="Center" />
+          </Grid>
           <ListBox x:Name="IdFilterList" ItemsSource="{Binding FrameFilters}">
             <ListBox.ItemTemplate>
               <DataTemplate>
-                <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+                <Grid ColumnDefinitions="*,52" ColumnSpacing="4">
+                  <CheckBox Grid.Column="0" Content="{Binding Label}" IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                            ToolTip.Tip="Show or hide the rows with this ID." />
+                  <CheckBox Grid.Column="1" IsChecked="{Binding IsHighlighted, Mode=TwoWay}"
+                            HorizontalAlignment="Center" AutomationProperties.Name="Highlight rows"
+                            ToolTip.Tip="Tint the rows with this ID (the tint follows the light/dark theme).">
+                    <Border Width="16" Height="12" CornerRadius="2"
+                            Background="{Binding HighlightBrush}" BorderThickness="1"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+                  </CheckBox>
+                </Grid>
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
