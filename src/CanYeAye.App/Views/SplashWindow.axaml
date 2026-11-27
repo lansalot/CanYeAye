@@ -20,6 +20,10 @@
              RenderOptions.BitmapInterpolationMode="HighQuality" />
       <ProgressBar IsIndeterminate="True" Height="3" Width="180" Opacity="0.8" />
       <TextBlock x:Name="VersionText" HorizontalAlignment="Center" FontSize="12" Opacity="0.6" />
+      <TextBlock Text="No warranty given or implied — use at own risk"
+                 HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                 MaxWidth="280" FontSize="10" FontStyle="Italic"
+                 Foreground="#FFB0BAC6" Opacity="0.75" />
     </StackPanel>
   </Border>
 </Window>
