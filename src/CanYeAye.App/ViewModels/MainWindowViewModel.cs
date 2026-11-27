@@ -329,6 +329,13 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private uint _bitrate = 500_000;
 
+    /// <summary>
+    /// Opens the connection in listen-only (silent) mode. Checked by default, as in SavvyCAN's
+    /// connection window: the bus is monitored but no frame may be transmitted.
+    /// </summary>
+    [ObservableProperty]
+    private bool _listenOnly = true;
+
     /// <summary>Valid CAN bus speeds offered by the connection dialog (re/connectionwindow.cpp).</summary>
     public ObservableCollection<uint> BusSpeeds { get; } =
     [
@@ -675,7 +682,7 @@ public partial class MainWindowViewModel : ObservableObject
             connection.StateChanged += OnConnectionStateChanged;
             await ConnectionManager.ConnectAsync(connection);
             _connection = connection;
-            ConnectionDetail = $"{connection.Name}: {connection.State}";
+            ConnectionDetail = FormatConnectionDetail(connection);
             StatusText = ConnectionDetail;
             OnPropertyChanged(nameof(IsConnected));
             OnPropertyChanged(nameof(BusSummary));
@@ -763,6 +770,14 @@ public partial class MainWindowViewModel : ObservableObject
         if (_connection is null)
         {
             await ShowMessageAsync("Send frame", "Connect to a bus first.");
+            return;
+        }
+
+        if (_connection.ListenOnly)
+        {
+            await ShowMessageAsync(
+                "Send frame",
+                "The connection is in listen-only mode. Clear \"Listen only\" in the connection window to transmit.");
             return;
         }
 
@@ -926,6 +941,7 @@ public partial class MainWindowViewModel : ObservableObject
                 BaudRate = BaudRate,
                 Bus0Speed = Bitrate,
                 Bus1Speed = Bitrate,
+                ListenOnly = ListenOnly,
             }),
             "Network connection (GVRET)" => new GvretConnection(new GvretConnectionOptions
             {
@@ -934,32 +950,38 @@ public partial class MainWindowViewModel : ObservableObject
                 Bus0Speed = Bitrate,
                 Bus1Speed = Bitrate,
                 EspSerialMode = false,
+                ListenOnly = ListenOnly,
             }),
             "LAWICEL / SLCAN Serial" => new LawicelConnection(new LawicelConnectionOptions
             {
                 PortName = SerialPort,
                 BaudRate = BaudRate,
                 Bitrate = Bitrate,
+                ListenOnly = ListenOnly,
             }),
             "PEAK PCAN-USB" => new PcanConnection(new PcanConnectionOptions
             {
                 Channel = SelectedPcanChannel,
                 Bitrate = Bitrate,
+                ListenOnly = ListenOnly,
             }),
             "socketcand (SocketCAN over Ethernet)" => new SocketCanDConnection(new SocketCanDConnectionOptions
             {
                 Host = Host,
                 Port = SocketCandPort,
                 BusNames = BusNames.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                ListenOnly = ListenOnly,
             }),
             "MQTT Connection" => new MqttConnection(new MqttConnectionOptions
             {
                 Host = Host,
                 Port = MqttPort,
                 BaseTopic = BaseTopic,
+                ListenOnly = ListenOnly,
             }),
-            "CANserver" => new CanServerConnection(new CanServerConnectionOptions(Host)),
-            "CANlogserver (TCP ASCII)" => new CanLogServerConnection(new CanLogServerConnectionOptions(Host, CanLogServerPort)),
+            "CANserver" => new CanServerConnection(new CanServerConnectionOptions(Host, ListenOnly)),
+            "CANlogserver (TCP ASCII)" => new CanLogServerConnection(
+                new CanLogServerConnectionOptions(Host, CanLogServerPort, ListenOnly)),
             _ => throw new InvalidOperationException($"Unknown connection type {SelectedConnectionType}."),
         };
     }
@@ -967,7 +989,8 @@ public partial class MainWindowViewModel : ObservableObject
     private void OnConnectionStateChanged(object? sender, ConnectionStateChangedEventArgs e) =>
         Dispatcher.UIThread.Post(() =>
         {
-            ConnectionDetail = $"{_connection?.Name ?? "Connection"}: {e.State}";
+            var connection = _connection ?? sender as ICanConnection;
+            ConnectionDetail = FormatConnectionDetail(connection, e.State);
             if (!string.IsNullOrEmpty(e.Message))
             {
                 ConnectionDetail += $" ({e.Message})";
@@ -975,6 +998,17 @@ public partial class MainWindowViewModel : ObservableObject
 
             StatusText = ConnectionDetail;
         });
+
+    private static string FormatConnectionDetail(ICanConnection? connection, ConnectionState? state = null)
+    {
+        if (connection is null)
+        {
+            return "No connection";
+        }
+
+        var text = $"{connection.Name}: {state ?? connection.State}";
+        return connection.ListenOnly ? $"{text} (listen-only)" : text;
+    }
 
     private void FlushPendingFrames()
     {

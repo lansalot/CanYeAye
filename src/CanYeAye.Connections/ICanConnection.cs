@@ -40,6 +40,12 @@ public interface ICanConnection : IAsyncDisposable
 
     ConnectionState State { get; }
 
+    /// <summary>
+    /// True when the transport is opened in listen-only (silent) mode. No frame may be
+    /// transmitted through it; <see cref="CanConnectionManager.SendFrameAsync"/> refuses to.
+    /// </summary>
+    bool ListenOnly { get; }
+
     IReadOnlyList<CanBusInfo> Buses { get; }
 
     event EventHandler<CanFrame>? FrameReceived;

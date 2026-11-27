@@ -9,9 +9,10 @@ public abstract class CanConnectionBase : ICanConnection
 {
     private IReadOnlyList<CanBusInfo> _buses;
 
-    protected CanConnectionBase(IReadOnlyList<CanBusInfo> buses)
+    protected CanConnectionBase(IReadOnlyList<CanBusInfo> buses, bool listenOnly = false)
     {
         _buses = buses;
+        ListenOnly = listenOnly;
     }
 
     public abstract string Name { get; }
@@ -19,6 +20,8 @@ public abstract class CanConnectionBase : ICanConnection
     public abstract ConnectionType Type { get; }
 
     public ConnectionState State { get; private set; }
+
+    public bool ListenOnly { get; }
 
     public IReadOnlyList<CanBusInfo> Buses => _buses;
 
@@ -49,6 +52,15 @@ public abstract class CanConnectionBase : ICanConnection
     }
 
     protected void Publish(CanFrame frame) => FrameReceived?.Invoke(this, frame);
+
+    /// <summary>Throws when this transport is listen-only, so a direct caller cannot transmit.</summary>
+    protected void ThrowIfListenOnly()
+    {
+        if (ListenOnly)
+        {
+            throw new InvalidOperationException("Connection is listen-only; transmission is disabled.");
+        }
+    }
 
     protected void SetBuses(IReadOnlyList<CanBusInfo> buses)
     {

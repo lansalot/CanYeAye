@@ -18,6 +18,9 @@ public sealed record LawicelConnectionOptions
     public uint DataRate { get; init; } = 2_000_000;
 
     public bool UseSystemTime { get; init; }
+
+    /// <summary>Opens the bus with the SLCAN <c>L</c> (listen-only) command instead of <c>O</c>.</summary>
+    public bool ListenOnly { get; init; }
 }
 
 /// <summary>
@@ -35,7 +38,7 @@ public sealed class LawicelConnection : CanConnectionBase
     private Task? _readLoop;
 
     public LawicelConnection(LawicelConnectionOptions options)
-        : base([new CanBusInfo(0, "CAN0")])
+        : base([new CanBusInfo(0, "CAN0")], options.ListenOnly)
     {
         _options = options;
         _protocol.UseSystemTime = options.UseSystemTime;
@@ -91,7 +94,8 @@ public sealed class LawicelConnection : CanConnectionBase
             var sequence = LawicelProtocol.BuildOpenSequence(
                 _options.Bitrate,
                 _options.CanFd,
-                _options.DataRate);
+                _options.DataRate,
+                _options.ListenOnly);
             await WriteAsync(Encoding.ASCII.GetBytes(sequence), cancellationToken).ConfigureAwait(false);
 
             SetState(ConnectionState.Connected);
@@ -143,6 +147,8 @@ public sealed class LawicelConnection : CanConnectionBase
 
     public override async Task SendFrameAsync(int localBus, CanFrame frame, CancellationToken cancellationToken = default)
     {
+        ThrowIfListenOnly();
+
         if (State != ConnectionState.Connected)
         {
             throw new InvalidOperationException("Lawicel connection is not open.");

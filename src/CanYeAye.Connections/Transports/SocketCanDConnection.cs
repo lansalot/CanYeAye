@@ -13,6 +13,9 @@ public sealed record SocketCanDConnectionOptions
 
     /// <summary>Bus names as announced by the beacon, e.g. <c>can0</c>, <c>can1</c>.</summary>
     public IReadOnlyList<string> BusNames { get; init; } = ["can0"];
+
+    /// <summary>Listen-only mode: the app never transmits on this connection.</summary>
+    public bool ListenOnly { get; init; }
 }
 
 /// <summary>
@@ -31,7 +34,7 @@ public sealed class SocketCanDConnection : CanConnectionBase
     private CancellationTokenSource? _cts;
 
     public SocketCanDConnection(SocketCanDConnectionOptions options)
-        : base([.. options.BusNames.Select((name, index) => new CanBusInfo(index, name))])
+        : base([.. options.BusNames.Select((name, index) => new CanBusInfo(index, name))], options.ListenOnly)
     {
         _options = options;
         var count = Math.Max(1, options.BusNames.Count);
@@ -121,6 +124,8 @@ public sealed class SocketCanDConnection : CanConnectionBase
 
     public override async Task SendFrameAsync(int localBus, CanFrame frame, CancellationToken cancellationToken = default)
     {
+        ThrowIfListenOnly();
+
         if (localBus < 0 || localBus >= _protocols.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(localBus));

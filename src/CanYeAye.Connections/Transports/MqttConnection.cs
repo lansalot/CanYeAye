@@ -22,6 +22,9 @@ public sealed record MqttConnectionOptions
     public bool UseTls { get; init; }
 
     public bool UseSystemTime { get; init; }
+
+    /// <summary>Listen-only mode: the app never transmits on this connection.</summary>
+    public bool ListenOnly { get; init; }
 }
 
 /// <summary>
@@ -35,7 +38,7 @@ public sealed class MqttConnection : CanConnectionBase
     private bool _useSystemTime;
 
     public MqttConnection(MqttConnectionOptions options)
-        : base([new CanBusInfo(0, "CAN0")])
+        : base([new CanBusInfo(0, "CAN0")], options.ListenOnly)
     {
         _options = options;
         _useSystemTime = options.UseSystemTime;
@@ -118,6 +121,8 @@ public sealed class MqttConnection : CanConnectionBase
 
     public override async Task SendFrameAsync(int localBus, CanFrame frame, CancellationToken cancellationToken = default)
     {
+        ThrowIfListenOnly();
+
         if (State != ConnectionState.Connected)
         {
             throw new InvalidOperationException("MQTT connection is not connected.");

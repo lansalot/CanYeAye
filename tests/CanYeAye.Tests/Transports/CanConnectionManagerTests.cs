@@ -91,10 +91,40 @@ public class CanConnectionManagerTests
         Assert.Empty(first.Sent);
     }
 
+    [Fact]
+    public async Task ListenOnlyConnectionRefusesToTransmit()
+    {
+        await using var manager = new CanConnectionManager();
+        var connection = new FakeConnection(1, listenOnly: true);
+        manager.Attach(connection);
+
+        var sent = new CanFrame(0x123, [9]) { Bus = 0 };
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => manager.SendFrameAsync(sent));
+
+        Assert.Contains("listen-only", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(connection.Sent);
+    }
+
+    [Fact]
+    public async Task ReceivedFramesStillFlowOnAListenOnlyConnection()
+    {
+        await using var manager = new CanConnectionManager();
+        var connection = new FakeConnection(1, listenOnly: true);
+        manager.Attach(connection);
+
+        var frames = new List<CanFrame>();
+        manager.FrameReceived += (_, frame) => frames.Add(frame);
+
+        connection.Raise(new CanFrame(0x321, [1, 2]));
+
+        Assert.Equal(0x321u, Assert.Single(frames).FrameId);
+    }
+
     private sealed class FakeConnection : CanConnectionBase
     {
-        public FakeConnection(int busCount)
-            : base(CreateBuses(busCount))
+        public FakeConnection(int busCount, bool listenOnly = false)
+            : base(CreateBuses(busCount), listenOnly)
         {
         }
 

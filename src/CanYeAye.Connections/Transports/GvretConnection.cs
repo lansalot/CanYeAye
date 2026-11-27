@@ -34,6 +34,9 @@ public sealed record GvretConnectionOptions
 
     public bool Bus1ListenOnly { get; init; }
 
+    /// <summary>Opens every bus in listen-only (silent) mode; implies both bus listen-only flags.</summary>
+    public bool ListenOnly { get; init; }
+
     public bool SingleWire { get; init; }
 }
 
@@ -54,7 +57,7 @@ public sealed class GvretConnection : CanConnectionBase
     private int _validationCounter = 10;
 
     public GvretConnection(GvretConnectionOptions options)
-        : base([new CanBusInfo(0, "CAN0"), new CanBusInfo(1, "CAN1")])
+        : base([new CanBusInfo(0, "CAN0"), new CanBusInfo(1, "CAN1")], options.ListenOnly)
     {
         _options = options;
         _protocol.FrameReceived += (_, frame) => Publish(frame);
@@ -102,10 +105,10 @@ public sealed class GvretConnection : CanConnectionBase
                 GvretProtocol.EncodeBusConfig(
                     _options.Bus0Speed,
                     true,
-                    _options.Bus0ListenOnly,
+                    _options.Bus0ListenOnly || _options.ListenOnly,
                     _options.Bus1Speed,
                     true,
-                    _options.Bus1ListenOnly,
+                    _options.Bus1ListenOnly || _options.ListenOnly,
                     _options.SingleWire),
                 cancellationToken).ConfigureAwait(false);
 
@@ -178,6 +181,8 @@ public sealed class GvretConnection : CanConnectionBase
 
     public override async Task SendFrameAsync(int localBus, CanFrame frame, CancellationToken cancellationToken = default)
     {
+        ThrowIfListenOnly();
+
         if (State != ConnectionState.Connected)
         {
             throw new InvalidOperationException("GVRET connection is not open.");

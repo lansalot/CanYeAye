@@ -68,6 +68,7 @@ public partial class MainWindow : Window
         _viewModel.MqttPort = _settings.MqttPort;
         _viewModel.CanLogServerPort = _settings.CanLogServerPort;
         _viewModel.SelectedPcanChannel = Math.Clamp(_settings.PcanChannel, 1, 16);
+        _viewModel.ListenOnly = _settings.LastListenOnly;
         if (_settings.LastConnectionType is { } connectionType &&
             _viewModel.ConnectionTypes.Contains(connectionType))
         {
@@ -204,6 +205,7 @@ public partial class MainWindow : Window
                 MqttPort = _viewModel.MqttPort,
                 CanLogServerPort = _viewModel.CanLogServerPort,
                 PcanChannel = _viewModel.SelectedPcanChannel,
+                LastListenOnly = _viewModel.ListenOnly,
                 NodeNames = _viewModel.NodeNames.Snapshot()
                     .OrderBy(pair => pair.Key)
                     .Select(pair => new CanYeAye.Core.Settings.NodeNameEntry(pair.Key, pair.Value))

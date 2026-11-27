@@ -126,6 +126,12 @@ public sealed class CanConnectionManager : IAsyncDisposable
             return;
         }
 
+        if (entry.Connection.ListenOnly)
+        {
+            throw new InvalidOperationException(
+                $"{entry.Connection.Name} is in listen-only mode; transmission is disabled.");
+        }
+
         var localBus = frame.Bus - entry.FirstBus;
         var copy = frame.Clone();
         copy.Bus = (byte)localBus;

@@ -167,6 +167,10 @@ fails the gate produces no build, package or release.
   10%-step UI scaling (View menu). Connection dialog split by connection type (GVRET serial/TCP,
   Lawicel, QT SerialBus placeholder, socketcand, MQTT, CANserver, CANlogserver); GVRET TCP uses
   port 23 and the CAN bus speed is a drop-down of standard speeds, persisted in settings.
+  The dialog has a `Listen only` checkbox (checked by default): listen-only connections open
+  silently where the transport supports it (GVRET bus flags, SLCAN `L`) and
+  `CanConnectionManager.SendFrameAsync` refuses every transmission, so the send window, scripts
+  and the OBD-II poller cannot put frames on the bus.
   Non-modal send-frame window, DBC manager (multi-file load/remove/reorder), log-loading
   progress dialog, scripting window, OBD-II poller window, sniffer window, flow-view window,
   and a compact frame-filter pane (per-ID list plus a J1939 node-name/bulk-selection tab) that

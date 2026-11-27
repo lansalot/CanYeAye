@@ -5,7 +5,7 @@ using CanYeAye.Core;
 
 namespace CanYeAye.Connections.Transports;
 
-public sealed record CanLogServerConnectionOptions(string Host, int Port = 23);
+public sealed record CanLogServerConnectionOptions(string Host, int Port = 23, bool ListenOnly = false);
 
 /// <summary>
 /// CANlogserver ASCII TCP stream (connections/canlogserver.cpp). Lines are newline-delimited, so
@@ -22,7 +22,7 @@ public sealed class CanLogServerConnection : CanConnectionBase
     private Task? _readLoop;
 
     public CanLogServerConnection(CanLogServerConnectionOptions options)
-        : base([new CanBusInfo(0, "CAN0")])
+        : base([new CanBusInfo(0, "CAN0")], options.ListenOnly)
     {
         _options = options;
         _protocol.FrameReceived += (_, frame) => Publish(frame);

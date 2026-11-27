@@ -234,6 +234,15 @@ public class LawicelProtocolTests
         Assert.Equal("C\rS8\rY5\rO\r", LawicelProtocol.BuildOpenSequence(1_000_000, true, 5_000_000));
     }
 
+    [Fact]
+    public void BuildsListenOnlyOpenSequence()
+    {
+        Assert.Equal("C\rS6\rL\r", LawicelProtocol.BuildOpenSequence(500_000, false, 0, listenOnly: true));
+        Assert.Equal(
+            "C\rS8\rY5\rL\r",
+            LawicelProtocol.BuildOpenSequence(1_000_000, true, 5_000_000, listenOnly: true));
+    }
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(8, 8)]

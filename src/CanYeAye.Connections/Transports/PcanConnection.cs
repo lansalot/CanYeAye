@@ -8,6 +8,9 @@ public sealed record PcanConnectionOptions
     public int Channel { get; init; } = 1;
 
     public uint Bitrate { get; init; } = 500_000;
+
+    /// <summary>Listen-only mode: the app never transmits on this connection.</summary>
+    public bool ListenOnly { get; init; }
 }
 
 /// <summary>
@@ -24,7 +27,7 @@ public sealed class PcanConnection : CanConnectionBase
     private bool _hasTimestampBasis;
 
     public PcanConnection(PcanConnectionOptions options)
-        : base([new CanBusInfo(0, $"PCAN-USB {options.Channel}")])
+        : base([new CanBusInfo(0, $"PCAN-USB {options.Channel}")], options.ListenOnly)
     {
         _options = options;
         _channel = PcanNative.ChannelHandle(options.Channel);
@@ -122,6 +125,8 @@ public sealed class PcanConnection : CanConnectionBase
 
     public override Task SendFrameAsync(int localBus, CanFrame frame, CancellationToken cancellationToken = default)
     {
+        ThrowIfListenOnly();
+
         if (State != ConnectionState.Connected)
         {
             throw new InvalidOperationException("PCAN connection is not open.");

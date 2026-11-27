@@ -5,7 +5,7 @@ using CanYeAye.Core;
 
 namespace CanYeAye.Connections.Transports;
 
-public sealed record CanServerConnectionOptions(string Host);
+public sealed record CanServerConnectionOptions(string Host, bool ListenOnly = false);
 
 /// <summary>
 /// CANserver (PANDA v1) over UDP (connections/canserver.cpp). The connection binds local port
@@ -22,7 +22,7 @@ public sealed class CanServerConnection : CanConnectionBase
     private Task? _heartbeat;
 
     public CanServerConnection(CanServerConnectionOptions options)
-        : base([new CanBusInfo(0, "CAN0"), new CanBusInfo(1, "CAN1"), new CanBusInfo(2, "CAN2")])
+        : base([new CanBusInfo(0, "CAN0"), new CanBusInfo(1, "CAN1"), new CanBusInfo(2, "CAN2")], options.ListenOnly)
     {
         _options = options;
         _protocol.FrameReceived += (_, frame) => Publish(frame);

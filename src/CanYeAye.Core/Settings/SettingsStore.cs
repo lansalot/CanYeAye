@@ -43,6 +43,9 @@ public sealed record AppSettings
     /// <summary>PCAN-USB channel (1 = USB1).</summary>
     public int PcanChannel { get; init; } = 1;
 
+    /// <summary>Open new connections in listen-only (no transmit) mode; on by default.</summary>
+    public bool LastListenOnly { get; init; } = true;
+
     public bool TimestampAbsolute { get; init; }
 
     public bool ShowDecimalIds { get; init; }

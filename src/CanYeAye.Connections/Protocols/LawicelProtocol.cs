@@ -229,9 +229,9 @@ public sealed class LawicelProtocol
 
     /// <summary>
     /// Builds the connect sequence: <c>C</c> (close), <c>S</c> (speed), optional <c>Y</c>
-    /// (CAN FD data rate) and <c>O</c> (open).
+    /// (CAN FD data rate) and <c>O</c> (open) or <c>L</c> (listen-only open).
     /// </summary>
-    public static string BuildOpenSequence(uint bitrate, bool canFd, uint dataRate)
+    public static string BuildOpenSequence(uint bitrate, bool canFd, uint dataRate, bool listenOnly = false)
     {
         var builder = new StringBuilder();
         builder.Append("C\r");
@@ -241,7 +241,7 @@ public sealed class LawicelProtocol
             builder.Append(EncodeDataRate(dataRate)).Append('\r');
         }
 
-        builder.Append("O\r");
+        builder.Append(listenOnly ? "L\r" : "O\r");
         return builder.ToString();
     }
 
